@@ -4,12 +4,16 @@ import sys
 from pydantic import BaseModel, ValidationError
 
 import zombuild
+
 from zombuild import Invocation, ZombuildPlugin
 from zombuild import paths
 from zombuild import Theme
+from zombuild._exception import ZombuildConfigException, ZombuildException
 from zombuild.console import Text
 from zombuild.tasks import ActionableTask, DefaultTask
 from zombuild.tasks import ActionableTaskSpecifier, TaskSpecifier
+
+from zombuild_core import CorePlugin
 
 
 class EnumConfig(BaseModel):
@@ -33,34 +37,25 @@ class EnumsTask(ActionableTask):
     ) -> None:
         super().__init__(invocation=invocation, **extra)
 
-        assert isinstance(enums, list)
+        if not isinstance(enums, list):
+            raise TypeError("expected `enums` to be a list")
 
-        mapped: list[EnumConfig] = []
+        enum_models: list[EnumConfig] = []
 
         for item in enums:
             try:
-                mapped.append(EnumConfig(**item))
+                enum_models.append(EnumConfig(**item))
             except ValidationError as e:
-                print()
-                print(Text("Invalid enum config:", Theme.WARNING))
-                print()
-                print(e)
-                print()
-                errors = e.errors(include_url=False)
-                for err in errors:
-                    for k in err:
-                        print(f"{k}:\t{err[k]}")
-                print()
-                sys.exit(-1)
+                raise ZombuildConfigException(
+                    f"invalid enum config",
+                    validation_error=e,
+                )
 
-        invocation.lifecycle_task("build").depends_on(self)
-
-        self.enums = mapped
+        self.enums = enum_models
 
     def setup(self, invocation: Invocation) -> None:
-        build_task = invocation.resolve_task("build-mod")
-        assert build_task is not None
-        build_task.depends_on(self)
+        invocation.lifecycle_task("build").depends_on(self)
+        invocation.require_task(CorePlugin.BUILD_TASK).depends_on(self)
 
     def execute(self) -> None:
         for enum in self.enums:

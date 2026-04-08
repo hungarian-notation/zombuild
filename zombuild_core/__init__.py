@@ -1,12 +1,8 @@
-from pathlib import Path
-import sys
 import zombuild
 
 from zombuild import paths
-from zombuild.config import PackageModel
 from zombuild.plugins import ZombuildPlugin
 from zombuild import Invocation
-from zombuild.tasks import TaskNameFilter
 
 from zombuild_core.InstallTask import InstallTask, UninstallTask
 from .BuildTask import BuildTask
@@ -14,6 +10,11 @@ from .CleanTask import CleanTask
 
 
 class CorePlugin(ZombuildPlugin):
+
+    CLEAN_TASK = "clean-mod"
+    BUILD_TASK = "build-mod"
+    INSTALL_TASK = "install-mod"
+    UNINSTALL_TASK = "uninstall-mod"
 
     def __init__(self, invocation: Invocation, **kwargs) -> None:
         super().__init__(
@@ -34,7 +35,7 @@ class CorePlugin(ZombuildPlugin):
         self.task_clean = invocation.register_task(
             CleanTask(
                 invocation=invocation,
-                name="clean-mod",
+                name=self.CLEAN_TASK,
                 output_path=output_path,
             )
         )
@@ -42,7 +43,7 @@ class CorePlugin(ZombuildPlugin):
         self.task_build = invocation.register_task(
             BuildTask(
                 invocation=invocation,
-                name="build-mod",
+                name=self.BUILD_TASK,
                 output_path=output_path,
             )
         )
@@ -50,7 +51,7 @@ class CorePlugin(ZombuildPlugin):
         self.task_install = invocation.register_task(
             InstallTask(
                 invocation=invocation,
-                name="install-mod",
+                name=self.INSTALL_TASK,
                 output_path=output_path,
             )
         )
@@ -58,7 +59,7 @@ class CorePlugin(ZombuildPlugin):
         self.task_uninstall = invocation.register_task(
             UninstallTask(
                 invocation=invocation,
-                name="uninstall-mod",
+                name=self.UNINSTALL_TASK,
                 output_path=output_path,
             )
         )
