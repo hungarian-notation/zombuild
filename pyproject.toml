@@ -1,0 +1,20 @@
+[build-system]
+
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "zombuild"
+
+description = "a build system for project zomboid mods"
+dependencies = ["pydantic~=2.12.5", "colorama~=0.4.6"]
+readme = "README"
+license = "BSD-3-Clause"
+
+dynamic = ["version"]
+
+[project.scripts]
+zombuild = "zombuild:main"
+
+[tool.setuptools.dynamic]
+version = { attr = "zombuild.__version__" }
