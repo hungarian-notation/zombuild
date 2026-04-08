@@ -37,7 +37,21 @@ class Tasks(InvocationBase):
     def tasks(self):
         return self._tasks
 
-    def resolve_task(self, filter: str | TaskPredicate, fuzzy=False):
+    def resolve_task(
+        self, filter: str | TaskPredicate, fuzzy=False
+    ) -> set[ZombuildTask]:
+        """
+        Gets the set of tasks matched by the fiter.
+
+        Args:
+            filter: name or predicate
+            fuzzy: Enable fuzzy matching.
+                Allows strings to match tasks whose names contain their characters in order, ignoring
+                extra intervening characters. Defaults to False.
+
+        Returns:
+            set of matched tasks
+        """
 
         fuzzy_predicate: TaskPredicate | None = None
 
@@ -46,47 +60,66 @@ class Tasks(InvocationBase):
                 fuzzy_predicate = FuzzyTaskPredicate(filter)
             filter = TaskNameFilter(task_name=filter)
 
-        matched: list[ZombuildTask] = []
-        matched_fuzzy: list[ZombuildTask] = []
+        matched: set[ZombuildTask] = set()
+        matched_fuzzy: set[ZombuildTask] = set()
 
         for task in self._tasks:
             if filter.test(task.specifier):
-                matched.append(task)
+                matched.add(task)
             if fuzzy_predicate is None or fuzzy_predicate.test(task.specifier):
-                matched_fuzzy.append(task)
+                matched_fuzzy.add(task)
 
-        if len(matched) == 1:
-            return matched[0]
-        elif len(matched_fuzzy) == 1:
-            return matched_fuzzy[0]
-        elif len(matched) <= 0:
+        if len(matched) > 0:
+            return matched
+        elif len(matched_fuzzy) > 0:
+            return matched_fuzzy
+        else:
+            return matched
 
-            return None
-        elif len(matched) > 1:
-            e = ZombuildException(
-                f"ambiguous task name: {filter} (matched {len(matched)} tasks)"
-            )
-            for m in matched:
-                e.add_note(f"matched: {m}")
-            raise e
+    def require_task(self, filter: str | ZombuildTask, fuzzy=False) -> ZombuildTask:
+        """
+        Variant of resolve_task that raises an exception if the filter does not resolve to one and
+        only one task.
 
-    def init_tasks(self):
+        Args:
+            filter: name or predicate
+            fuzzy: Enable fuzzy matching.
 
-        for task_name in self.config.tasks:
-            task_config = self.config.tasks[task_name]
+                Allows strings to match tasks whose names contain their characters in order, ignoring
+                extra intervening characters. Defaults to False.
 
-            if isinstance(task_config, str):
-                task_config = TaskConfig(type=task_config)
+        Raises:
+            ZombuildException: when no task is found
+            ZombuildException: when multiple tasks are found by an ambiguous filter
 
-            result = self.create_task(
-                prototype=task_config.type,
-                name=task_name,
-                args=task_config.model_extra or {},
-            )
+        Returns:
+            The single matched task.
+        """
 
-            assert result is not None
+        if isinstance(filter, str):
+            resolved = self.resolve_task(filter, fuzzy=fuzzy)
+            if not resolved:
+                raise ZombuildException(f"no such task: {filter}")
+            if len(resolved) > 1:
+                raise ZombuildException(f"ambiguous task selector: {filter}")
+            return resolved.pop()
+        else:
+            return filter
 
     def lifecycle_task(self, name: str) -> LifecycleTask:
+        """
+        Retrieve a named lifecycle task instance, creating it if it does not exist.
+
+        Lifecycle tasks do no work of their own, serving as top-level dependency tasks for
+        build phases.
+
+        Args:
+            name: The name of the lifecycle task.
+
+        Returns:
+            LifecycleTask
+        """
+
         if name in self._lifecycle:
             return self._lifecycle[name]
         task = LifecycleTask(invocation=self, name=name)
@@ -94,7 +127,26 @@ class Tasks(InvocationBase):
         self._tasks.append(task)
         return task
 
-    def create_task(self, *, prototype: str, name: str, args: dict):
+    def init_tasks(self):
+        """
+        Initialize user-specified tasks.
+        """
+
+        for task_name in self.config.tasks:
+            task_config = self.config.tasks[task_name]
+
+            if isinstance(task_config, str):
+                task_config = TaskConfig(type=task_config)
+
+            result = self._init_tasks_create(
+                prototype=task_config.type,
+                name=task_name,
+                args=task_config.model_extra or {},
+            )
+
+            assert result is not None
+
+    def _init_tasks_create(self, *, prototype: str, name: str, args: dict):
 
         [plugin_name, prototype_name] = prototype.split(".", 1)
 
@@ -109,21 +161,18 @@ class Tasks(InvocationBase):
         return task
 
     def register_task[T: ZombuildTask](self, task: T) -> T:
+        """
+        Programatically register a task instance.
+
+        Intended for use by plugins, allowing them to register automatically created tasks.
+
+        Returns:
+            The created task.
+        """
+
         self._tasks.append(task)
         return task
 
-    def _require_resolve(self, name: str | ZombuildTask, fuzzy=False):
-        if isinstance(name, str):
-            resolved = self.resolve_task(name, fuzzy=fuzzy)
-            if resolved is None:
-                raise ZombuildException(f"no such task: {name}")
-            return resolved
-        else:
-            return name
-
-    def collect_tasks(
-        self, tasks: Sequence[str | ZombuildTask], fuzzy=False
-    ) -> set[ZombuildTask]:
         """
         collects all named tasks and their dependencies
 
@@ -138,8 +187,23 @@ class Tasks(InvocationBase):
             set of named tasks and their dependencies
         """
 
+    def collect_tasks(
+        self, tasks: Sequence[str | ZombuildTask], fuzzy=False
+    ) -> set[ZombuildTask]:
+        """
+        collects all named tasks and their dependencies
+
+        Args:
+            tasks: list of tasks or task names. Names will be resolved to tasks via
+                :func:`~require_task`
+            fuzzy: see :func:`~require_task`
+
+        Returns:
+            _description_
+        """
+
         def resolve(name: str | ZombuildTask):
-            return self._require_resolve(name, fuzzy=fuzzy)
+            return self.require_task(name, fuzzy=fuzzy)
 
         queue = set(map(resolve, tasks))
         seen = set(queue)
@@ -154,7 +218,22 @@ class Tasks(InvocationBase):
                     seen.add(other)
         return seen
 
-    def solve_tasks(self, tasks: Sequence[str | ZombuildTask], fuzzy=False):
+    def solve_tasks(self, tasks: Sequence[str], fuzzy=False) -> list[ZombuildTask]:
+        """
+        Solves a list of task names from the command line, producing a list of those tasks and
+        their dependencies in an appropriate execution order.
+
+        Args:
+            tasks: list of task names to resolve via :func:`~require_task`
+            fuzzy: see :func:`~require_task`
+
+        Raises:
+            ZombuildException: if the task dependency graph is cyclic
+
+        Returns:
+            list of named tasks and their dependencies in execution order
+        """
+
         unsorted = list(self.collect_tasks(tasks, fuzzy=fuzzy))
         order: list[ZombuildTask] = []
 
@@ -169,7 +248,14 @@ class Tasks(InvocationBase):
 
         return order
 
-    def execute_tasks(self, tasks: Sequence[str | ZombuildTask]):
+    def execute_tasks(self, tasks: Sequence[str]):
+        """
+        executes the named tasks and their dependencies
+
+        Args:
+            tasks: task names
+        """
+
         order = self.solve_tasks(tasks, fuzzy=True)
         for task in order:
             self.execute_task(task)
@@ -184,11 +270,9 @@ class Tasks(InvocationBase):
 
 
 class Invocation(Tasks, InvocationBase):
-
-    @dataclass
-    class SequenceTask:
-        name: str
-        tasks: list[str]
+    """
+    Represents an invocation of the build tool.
+    """
 
     def __init__(
         self, arguments: ZombuildArguments, project: Path | PackageModel
