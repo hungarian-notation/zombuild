@@ -1,5 +1,6 @@
 from typing import TYPE_CHECKING
 
+from zombuild._exception import ZombuildException
 from zombuild.config import PluginConfig
 from zombuild.plugins import ZombuildPlugin
 from zombuild.tasks import ZombuildTask
@@ -30,7 +31,6 @@ class InvocationPlugins:
         factory = ZombuildPlugin.load(config.plugin)
 
         plugin = factory(
-            package=self.package,
             invocation=self._invocation,
             **(config.model_extra or {}),
         )
@@ -42,8 +42,11 @@ class InvocationPlugins:
         return self._plugins.values()
 
     def plugin(self, name: str):
-        return self._plugins[name]
-
+        plugin = self._plugins.get(name)
+        if plugin is None:
+            raise ZombuildException(f"no such plugin: {name}")
+        return plugin
+    
     def create_task(
         self,
         plugin_name: str,
