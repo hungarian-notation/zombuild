@@ -1,6 +1,7 @@
-from typing import TYPE_CHECKING, Iterable
+from typing import TYPE_CHECKING, Callable, Iterable
 from abc import ABC, ABCMeta, abstractmethod
 from pathlib import Path
+from zombuild._exception import ZombuildException
 from zombuild._invocation_base import InvocationBase
 from zombuild.theme import Theme
 from zombuild.console import Indent, Style, Text
@@ -68,6 +69,21 @@ class DefaultTask(ABC, metaclass=_DefaultTaskMeta):
         self.log_trace()
 
         self._didwork = True
+
+    def perform_work[T](
+        self, work: Callable[[], T], work_type: str, **kwargs
+    ) -> T | None:
+        result = None
+        if not self.arguments.dry_run:
+            try:
+                result = work()
+            except Exception as e:
+                e.add_note(f"while attempting to perform work: {work_type}")
+                for k in kwargs:
+                    e.add_note(f"\t{k} = {repr(kwargs[k])}")
+                raise
+        self.log_work(work_type, **kwargs)
+        return result
 
     @classmethod
     def get_prototype(cls) -> str:

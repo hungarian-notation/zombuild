@@ -36,8 +36,12 @@ class InstallTask(ActionableTask):
         # print(f"install_path={install_path}")
 
         if install_path.is_symlink() and not install_path.exists(follow_symlinks=True):
-            install_path.unlink()
-            self.log_work("unlinking broken symlink", path=install_path)
+
+            self.perform_work(
+                lambda: install_path.unlink(),
+                "unlink broken symlink",
+                path=install_path,
+            )
 
         if install_path.exists(follow_symlinks=False):
             if install_path.is_symlink():
@@ -45,8 +49,12 @@ class InstallTask(ActionableTask):
                     return
             raise Exception(f"install path already exists: {install_path}")
 
-        self.log_work("linking", path=install_path, source=self.output_path)
-        install_path.symlink_to(self.output_path, True)
+        self.perform_work(
+            lambda: install_path.symlink_to(self.output_path, True),
+            "link",
+            path=install_path,
+            source=self.output_path,
+        )
 
 
 class UninstallTask(ActionableTask):
@@ -78,14 +86,20 @@ class UninstallTask(ActionableTask):
         # print(f"install_path={install_path}")
 
         if install_path.is_symlink() and not install_path.exists(follow_symlinks=True):
-            install_path.unlink()
-            self.log_work("unlinking broken symlink", path=install_path)
+            self.perform_work(
+                lambda: install_path.unlink(),
+                "unlink broken symlink",
+                path=install_path,
+            )
 
         if install_path.exists(follow_symlinks=False):
             if install_path.is_symlink():
                 if install_path.resolve() == self.output_path.resolve():
-                    self.log_work("unlinking", path=install_path)
-                    install_path.unlink()
+                    self.perform_work(
+                        lambda: install_path.unlink(),
+                        "unlink",
+                        path=install_path,
+                    )
                     return
 
             raise Exception(f"install path is not expected symlink: {install_path}")

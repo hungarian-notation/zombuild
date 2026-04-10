@@ -3,6 +3,9 @@ from typing import Any, Literal, overload
 from pydantic import BaseModel, ConfigDict, Field
 from pydantic.json_schema import SkipJsonSchema
 
+from zombuild.config._include import PathOrInclude
+from zombuild.config._types import ItemOrSequence
+
 VERSION = r"^[0-9]+(\.[0-9]+){1,2}$"
 
 
@@ -111,14 +114,13 @@ class MetaModDict(MetaPackageDict):
     loadModAfter: list[str] = Field(default_factory=list)
     loadModBefore: list[str] = Field(default_factory=list)
 
-    pack: str | list[str] | None = Field(default_factory=list)
-    tiledef: str | list[str] | None = Field(default_factory=list)
+    pack: ItemOrSequence[str] = Field(default_factory=list)
+    tiledef: ItemOrSequence[str] = Field(default_factory=list)
 
 
 class ModConfig(MetaModDict, WithPath):
     model_config = ConfigDict(extra="allow")
-    common: str | None = None
-    versions: dict[str, str]
+    versions: dict[str | Literal["common"], ItemOrSequence[PathOrInclude]]
 
 
 class PackageModel(MetaPackageDict, WithPath):
