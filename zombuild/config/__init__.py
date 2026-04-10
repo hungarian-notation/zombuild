@@ -116,6 +116,7 @@ class MetaModDict(MetaPackageDict):
 
 
 class ModConfig(MetaModDict, WithPath):
+    model_config = ConfigDict(extra="allow")
     common: str | None = None
     versions: dict[str, str]
 
