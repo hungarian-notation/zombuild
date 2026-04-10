@@ -1,13 +1,16 @@
 from typing import TYPE_CHECKING, Callable, Literal
 
 
+from zombuild._exception import ZombuildException
 from zombuild.paths import normalize
 from zombuild.tasks._default import ActionableTask
 from dataclasses import dataclass
-from pathlib import Path
+from pathlib import Path, PurePath
 
 if TYPE_CHECKING:
     from zombuild import Invocation
+
+_PathLike = str | PurePath | Path
 
 
 class FilesTask(ActionableTask):
@@ -57,10 +60,6 @@ class FilesTask(ActionableTask):
         self._srcroot = srcroot
         self._dstroot = dstroot
 
-    def log_work(self, work_type: str, **kwargs):
-
-        super().log_work(work_type, **kwargs)
-
     def append(self, src: FileAction | Path | None, dst: Path):
         if self._srcroot is not None and isinstance(src, Path):
             if not src.is_relative_to(self._srcroot):
@@ -86,7 +85,7 @@ class FilesTask(ActionableTask):
             files.append(item.dst)
         return files
 
-    def _relative(self, base: Path | None, leaf: str | Path):
+    def _relative(self, base: Path | None, leaf: _PathLike):
         if not isinstance(leaf, Path):
             leaf = Path(leaf)
         if not leaf.is_absolute():
@@ -102,8 +101,8 @@ class FilesTask(ActionableTask):
     def touch(self, dst: Path | str):
         self.append(None, self._relative(self._dstroot, dst))
 
-    def file(self, src: FilesTask.FileAction | Path | str | None, dst: Path | str):
-        if isinstance(src, Path | str):
+    def file(self, src: FilesTask.FileAction | _PathLike | None, dst: _PathLike):
+        if isinstance(src, _PathLike):
             src = self._relative(self._srcroot, src)
 
         self.append(
@@ -113,8 +112,8 @@ class FilesTask(ActionableTask):
 
     def glob(
         self,
-        src: Path | str,
-        dst: Path | str,
+        src: _PathLike,
+        dst: _PathLike,
         glob: str,
         ignore: str | list[str] | None = None,
     ):
@@ -140,20 +139,27 @@ class FilesTask(ActionableTask):
     def execute(self) -> None:
         for item in self._items:
             if not item.dst.parent.exists():
-                if not self.arguments.dry_run:
-                    item.dst.parent.mkdir(parents=True)
-                self.log_work(f"created directory", path=item.dst.parent)
+                self.perform_work(
+                    lambda: item.dst.parent.mkdir(parents=True),
+                    f"create directory",
+                    path=item.dst.parent,
+                )
 
             if item.src is None:
-                if not self.arguments.dry_run:
-                    item.dst.touch()
-                self.log_work("touched file", path=item.dst)
+                self.perform_work(
+                    lambda: item.dst.touch(),
+                    "touch file",
+                    path=item.dst,
+                )
                 continue
 
             if isinstance(item.src, Callable):
-                if not self.arguments.dry_run:
-                    item.src(item.dst)
-                self.log_work("generated file", path=item.dst)
+                callable = item.src
+                self.perform_work(
+                    lambda: callable(item.dst),
+                    "generate file",
+                    path=item.dst,
+                )
                 continue
 
             if item.dst.exists():
@@ -162,15 +168,28 @@ class FilesTask(ActionableTask):
                 if sstat.st_mtime <= dstat.st_mtime:
                     continue
                 else:
-                    if not self.arguments.dry_run:
-                        item.dst.unlink()
-                    self.log_work("deleted file", path=item.dst)
+                    dst = item.dst
+                    self.perform_work(
+                        lambda: dst.unlink(),
+                        "delete file",
+                        path=item.dst,
+                    )
 
             if self._mode == "link":
-                if not self.arguments.dry_run:
-                    item.dst.symlink_to(item.src)
-                self.log_work("created symlink", source=item.src, path=item.dst)
+                src = item.src
+                dst = item.dst
+                self.perform_work(
+                    lambda: item.dst.symlink_to(src),
+                    "create symlink",
+                    source=item.src,
+                    path=item.dst,
+                )
             else:
-                if not self.arguments.dry_run:
-                    item.src.copy(item.dst, follow_symlinks=False)
-                self.log_work("copied file", source=item.src, path=item.dst)
+                src = item.src
+                dst = item.dst
+                self.perform_work(
+                    lambda: src.copy(dst, follow_symlinks=False),
+                    "copy file",
+                    source=item.src,
+                    path=item.dst,
+                )

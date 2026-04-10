@@ -1,7 +1,17 @@
+from typing import Sequence
+
 from zombuild import Invocation
+from zombuild.config._include import (
+    Include,
+    PathOrInclude,
+    normalize_include,
+    normalize_includes,
+)
+from zombuild.config._types import ItemOrSequence
+from zombuild.config.definitions import ignore_default
 from ._modinfo import generate_modinfo
 
-from pathlib import Path
+from pathlib import Path, PurePath
 from zombuild.tasks import FilesTask
 
 # from zombuild._plan import Planner
@@ -34,23 +44,31 @@ class BuildTask(FilesTask):
         self.touch(".zombuilt")
         self.file("assets/preview.png", "preview.png")
         for mod_id in self._invocation.config.mods:
-            self.__plan_mod(
+            self._plan_mod(
                 mod_id=mod_id,
             )
 
-    def __plan_mod(self, mod_id: str) -> None:
+    def _include(self, includes: Sequence[Include], dst: str | PurePath):
+        for include in includes:
+            self.glob(
+                src=include.source,
+                dst=PurePath(dst) / include.prefix,
+                glob="**/*",
+                ignore=ignore_default(),
+            )
+
+    def _plan_mod(self, mod_id: str) -> None:
         mod = self.config.mods[mod_id]
 
         self.touch(
             f"Contents/mods/{mod_id}/common/.nodelete",
         )
 
-        if mod.common is not None:
-            self.glob(
-                src=mod.common,
+        if (common := mod.versions.get("common")) is not None:
+
+            self._include(
+                includes=normalize_includes(common),
                 dst=f"Contents/mods/{mod_id}/common",
-                glob="**/*",
-                ignore=["**/old/**", "*.d.lua", "*.old", "*.old.*"],
             )
 
         poster_path = Path(mod.poster)
@@ -79,11 +97,9 @@ class BuildTask(FilesTask):
 
             version_path = mod.versions[version]
 
-            self.glob(
-                src=version_path,
+            self._include(
+                includes=normalize_includes(version_path),
                 dst=f"Contents/mods/{mod_id}/{version}",
-                glob="**/*",
-                ignore=["**/old/**", "*.d.lua", "*.old", "*.old.*"],
             )
 
     def execute(self) -> None:

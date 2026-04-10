@@ -40,9 +40,17 @@ class CleanTask(ActionableTask):
         if path.is_dir():
             for item in path.iterdir():
                 self._rm(item)
-            path.rmdir()
+            self.perform_work(
+                lambda: path.rmdir(),
+                "remove dir",
+                path=path,
+            )
         else:
             if path.is_symlink() or path.is_file():
-                path.unlink()
+                self.perform_work(
+                    lambda: path.unlink(),
+                    "unlink file or symlink",
+                    path=path,
+                )
             elif path.is_dir():
                 self._rm(path)

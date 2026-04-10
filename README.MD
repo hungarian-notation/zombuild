@@ -11,19 +11,42 @@ Configured by a `zombuild.json` file in your project root.
     "id": "mymod",
     "name": "My Mod's Workshop Name",
     "version": "0.0.1",
+    "url": "https://example.com",
     "description": { "ref": "mod-description.txt" },
+    "authors": [ "Alan Turing" ],
+
     "preview": "assets/preview.png",
-    "authors": [ "me" ],
+
+    "category": "features",
+    "versionMin": "42.0",
+    "require": [ "my_other_mod" ],
+    "incompatible": [  ],
+
 
     "mods": {
         "mymod": {
             "name": "My Mod's In-Game Name",
             "poster": "assets/poster.png",
             "icon": "assets/icon.png",
-            "common": "src/common",
             "versionMin": "42.16",
             "versions": {
-                "42.16": "src/42.16"
+                "common": {
+                    "source": "assets/textures",
+                    "prefix": "media/textures/mymod"
+                },
+
+                "42.16": [
+                    {
+                        "source": "mods/main/latest/media",
+                        "prefix": "media",
+                        "ignore": "*.d.lua"
+                    },
+                    {
+                        "source": "mods/main/latest/translations",
+                        "prefix": "media/lua/shared/Translate",
+                        "glob": "*.json"
+                    }
+                ]
             },
             "require": [ ],
             "incompatible": [ ],

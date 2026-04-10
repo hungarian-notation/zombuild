@@ -66,8 +66,12 @@ class EnumsTask(ActionableTask):
         source = self.get_source(enum)
 
         if not output.parent.exists():
-            output.parent.mkdir(parents=True)
-            self.log_work("created directory", path=output.parent)
+
+            self.perform_work(
+                lambda: output.parent.mkdir(parents=True),
+                "create directory",
+                path=output.parent,
+            )
 
         if output.exists():
             if not output.is_file():
@@ -87,13 +91,19 @@ class EnumsTask(ActionableTask):
                     "that is not a generated enum: {output}"
                 )
             else:
-                output.unlink()
-                self.log_work("unlinked old enum", path=output)
+                self.perform_work(
+                    lambda: output.unlink(),
+                    "unlink old enum",
+                    path=output,
+                )
 
         assert not output.exists()
 
-        output.write_text(source)
-        self.log_work("wrote generated enum", path=output)
+        self.perform_work(
+            lambda: output.write_text(source),
+            "write generated enum",
+            path=output,
+        )
 
     def get_source(self, enum: EnumConfig):
         variable_name = enum.type.replace(".", "_").lower()
