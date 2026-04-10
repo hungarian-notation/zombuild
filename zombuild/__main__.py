@@ -13,6 +13,8 @@ from argparse import (
 from pathlib import Path
 from typing import Any, Sequence
 
+import colorama
+
 from zombuild import paths
 from zombuild._arguments import ZombuildArguments
 from ._invocation import Invocation
@@ -39,6 +41,7 @@ class DefineAction(Action):
 
 
 def main():
+    colorama.just_fix_windows_console()
 
     #############################
 

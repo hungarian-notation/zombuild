@@ -5,11 +5,12 @@ colorama which is already a transient dependency via pydantic.
 
 import os
 import shutil
+import sys
 import textwrap
 from typing import TYPE_CHECKING, Iterable, Literal, overload
 from colorama import just_fix_windows_console
+import colorama
 
-just_fix_windows_console()
 
 if TYPE_CHECKING:
     from _typeshed import SupportsWrite
@@ -45,7 +46,11 @@ class Esc:
         self._suffix = suffix
 
     def __str__(self) -> str:
-        return f"{self._esc}{self._prefix}{self._sep.join(self._codes)}{self._suffix}"
+        if sys.stdout.isatty():
+            return (
+                f"{self._esc}{self._prefix}{self._sep.join(self._codes)}{self._suffix}"
+            )
+        return ""
 
     def join(self, other: Esc):
         assert self.is_joinable(other)
@@ -200,8 +205,12 @@ class Text:
             self.append(v)
 
     def __str__(self) -> str:
-        style = str(self._style)
-        reset = "" if style in self._unstyled else Style.RESET
+        if sys.stdout.isatty():
+            style = str(self._style)
+            reset = "" if style in self._unstyled else Style.RESET
+        else:
+            style = ""
+            reset = ""
         return f"{self._style}{"".join(self._strings)}{reset}"
 
     @overload
@@ -244,8 +253,11 @@ class Indent:
         columns = shutil.get_terminal_size().columns
         content = str(self._content)
         indent = self._indent
-        return os.linesep.join(
-            textwrap.wrap(
-                content, columns, initial_indent=indent, subsequent_indent=indent
+        if sys.stdout.isatty():
+            return os.linesep.join(
+                textwrap.wrap(
+                    content, columns, initial_indent=indent, subsequent_indent=indent
+                )
             )
-        )
+        else:
+            return indent + content
