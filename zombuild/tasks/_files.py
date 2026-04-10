@@ -48,9 +48,11 @@ class FilesTask(ActionableTask):
         self._items: list[FilesTask.Item] = []
 
         if srcroot is not None:
-            assert (srcroot := normalize(srcroot)).is_absolute()
+            if not (srcroot := normalize(srcroot)).is_absolute():
+                raise ZombuildException(f"{srcroot} is not absolute")
         if dstroot is not None:
-            assert (dstroot := normalize(dstroot)).is_absolute()
+            if not (dstroot := normalize(dstroot)).is_absolute():
+                raise ZombuildException(f"{dstroot} is not absolute")
 
         self._srcroot = srcroot
         self._dstroot = dstroot
@@ -61,9 +63,11 @@ class FilesTask(ActionableTask):
 
     def append(self, src: FileAction | Path | None, dst: Path):
         if self._srcroot is not None and isinstance(src, Path):
-            assert src.is_relative_to(self._srcroot)
+            if not src.is_relative_to(self._srcroot):
+                raise ZombuildException(f"{src} is not relative to {self._srcroot}")
         if self._dstroot is not None:
-            assert dst.is_relative_to(self._dstroot)
+            if not dst.is_relative_to(self._dstroot):
+                raise ZombuildException(f"{dst} is not relative to {self._dstroot}")
 
         self._items.append(FilesTask.Item(src=src, dst=dst))
 
@@ -86,7 +90,10 @@ class FilesTask(ActionableTask):
         if not isinstance(leaf, Path):
             leaf = Path(leaf)
         if not leaf.is_absolute():
-            assert base is not None
+            if base is None:
+                raise ZombuildException(
+                    f"{leaf} is not absolute and the relevant base is not set"
+                )
             assert base.is_absolute()
             return normalize(base / leaf)
         else:
