@@ -47,7 +47,7 @@ def main():
 
     parser = ArgumentParser(
         prog="zombuild",
-        description="a no-nonsense build tool for project zomboid mods",
+        description="build tool for project zomboid mods",
     )
 
     _set_universal(parser)
