@@ -1,7 +1,8 @@
-from abc import ABC
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Iterable, Protocol, runtime_checkable
+from typing import TYPE_CHECKING, Iterable, Protocol, override, runtime_checkable
 
+from zombuild.lifecycle_mixins import WithSetupLifecycle
 from zombuild.tasks._filter import TaskPredicate
 
 
@@ -35,33 +36,25 @@ class LifecycleTaskSpecifier(TaskSpecifier):
         return f"@{self.name}"
 
 
-@runtime_checkable
-class ZombuildTask(Protocol):
-
-    def __init__(self, *, name: str, invocation: Invocation, **kwargs) -> None: ...
+class ZombuildTask(ABC, WithSetupLifecycle["Invocation"]):
 
     @property
+    @abstractmethod
     def specifier(self) -> TaskSpecifier: ...
 
+    @abstractmethod
     def get_dependencies(
         self,
         tasks: Iterable[ZombuildTask],
         include_optional: bool = False,
     ) -> set[ZombuildTask]: ...
 
+    @abstractmethod
     def depends_on(
         self,
         other: TaskPredicate | ZombuildTask,
         optional: bool = False,
     ): ...
 
-    def setup(self, invocation: Invocation) -> None:
-        """
-        Called after all tasks have been created, but before execution begins. 
-
-        Args:
-            invocation (Invocation): _description_
-        """
-        ...
-
+    @abstractmethod
     def execute(self) -> None: ...

@@ -16,7 +16,7 @@ from zombuild.tasks._filter import CallablePredicate, TaskPredicate
 
 if TYPE_CHECKING:
     from zombuild import Invocation
-    from zombuild.config.package import PackageModel
+    from zombuild.config.package import PackageConfig
 
 
 class _DefaultTaskMeta(ABCMeta):
@@ -25,14 +25,13 @@ class _DefaultTaskMeta(ABCMeta):
         return cls.__name__
 
 
-class DefaultTask(ABC, metaclass=_DefaultTaskMeta):
+class DefaultTask(ZombuildTask, metaclass=_DefaultTaskMeta):
     """
     A general implementation of the ZombuildTask protocol that mainly handles dependency
     management, leaving execution details to subclasses.
     """
 
-    def __init__(self, *, invocation: InvocationBase, specifier: TaskSpecifier) -> None:
-        super().__init__()
+    def __init__(self, *, invocation: Invocation, specifier: TaskSpecifier) -> None:
         self._invocation = invocation
         self._dependencies: set[TaskPredicate] = set()
         self._optional_dependencies: set[TaskPredicate] = set()
@@ -94,7 +93,7 @@ class DefaultTask(ABC, metaclass=_DefaultTaskMeta):
         return self._specifier
 
     @property
-    def invocation(self) -> InvocationBase:
+    def invocation(self) -> Invocation:
         return self._invocation
 
     @property
@@ -102,7 +101,7 @@ class DefaultTask(ABC, metaclass=_DefaultTaskMeta):
         return self.invocation.arguments
 
     @property
-    def config(self) -> PackageModel:
+    def config(self) -> PackageConfig:
         return self._invocation.config
 
     @property
@@ -165,16 +164,12 @@ class ActionableTask(DefaultTask):
                 prototype=self.__class__.__name__,
             ),
         )
-
         self._warn_extra(name, extra)
-
-    def setup(self, invocation: Invocation) -> None:
-        pass
 
 
 class LifecycleTask(DefaultTask):
 
-    def __init__(self, *, invocation: InvocationBase, name: str, **extra) -> None:
+    def __init__(self, *, invocation: Invocation, name: str, **extra) -> None:
         super().__init__(
             invocation=invocation,
             specifier=LifecycleTaskSpecifier(name=name),
@@ -182,7 +177,5 @@ class LifecycleTask(DefaultTask):
 
         self._warn_extra(name, extra)
 
-    def execute(self) -> None: ...
-
-    def setup(self, invocation: InvocationBase) -> None:
+    def execute(self) -> None:
         pass

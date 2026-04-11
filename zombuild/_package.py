@@ -7,7 +7,7 @@ from pydantic import ValidationError
 
 from zombuild._exception import ZombuildConfigException, ZombuildException
 from zombuild._schema import write_schema
-from .config.package import PackageModel
+from .config.package import PackageConfig
 
 
 def is_uri_with_schema(string):
@@ -15,8 +15,8 @@ def is_uri_with_schema(string):
     return parsed.scheme is not None and parsed.scheme != ""
 
 
-def resolve_package(project: Path | PackageModel) -> PackageModel:
-    if isinstance(project, PackageModel):
+def resolve_package(project: Path | PackageConfig) -> PackageConfig:
+    if isinstance(project, PackageConfig):
         return project
 
     search_path = [project / "zombuild.json", project / "zombmod.json"]
@@ -35,7 +35,7 @@ def resolve_package(project: Path | PackageModel) -> PackageModel:
     package_json = json.loads(project.read_text())
 
     try:
-        package = PackageModel(**package_json, source=project)
+        package = PackageConfig(**package_json, source=project)
     except ValidationError as e:
         raise ZombuildConfigException(validation_error=e)
 

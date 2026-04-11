@@ -2,7 +2,7 @@ import re
 
 from pathlib import Path, PurePosixPath
 from typing import Sequence, Tuple
-from zombuild.config.package import PackageModel
+from zombuild.config.package import PackageConfig
 from zombuild.config.externalstring import ExternalString
 
 type ModInfoString = str
@@ -10,7 +10,7 @@ type ModInfoStringList = Sequence[ModInfoString]
 type ModInfo = list[Tuple[str, None | ModInfoString | ModInfoStringList]]
 
 
-def generate_modinfo(package: PackageModel, id: str) -> str:
+def generate_modinfo(package: PackageConfig, id: str) -> str:
     """derives the content of a mod.info file for the given package and modid
 
     Args:
@@ -29,7 +29,7 @@ def normalize_text(value: str, /, *, line_break: str = r" <BR> "):
     return normalized
 
 
-def _derive_modinfo(package: PackageModel, id: str) -> ModInfo:
+def _derive_modinfo(package: PackageConfig, id: str) -> ModInfo:
     def delistify(arr: list[str]):
         return ",".join(arr)
 
@@ -82,8 +82,8 @@ def _derive_modinfo(package: PackageModel, id: str) -> ModInfo:
     info.append(("loadModAfter", mod.loadModAfter))
     info.append(("loadModBefore", mod.loadModBefore))
     info.append(("category", mod.category or package.category))
-    info.append(("pack", mod.category or package.category))
-    info.append(("tiledef", mod.category or package.category))
+    info.append(("pack", mod.pack))
+    info.append(("tiledef", [*mod.tiledef]))
     info.append(("versionMin", mod.versionMin or package.versionMin))
     info.append(("versionMax", mod.versionMax or package.versionMax))
 

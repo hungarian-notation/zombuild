@@ -1,10 +1,7 @@
 from pydantic import BaseModel
 
-
 from pathlib import Path
-
 from pydantic.json_schema import SkipJsonSchema
-
 
 class WithPath(BaseModel):
     _json_source: SkipJsonSchema[Path | None] = None

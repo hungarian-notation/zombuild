@@ -1,17 +1,13 @@
-
 from zombuild.config.externalstring import ExternalString
 from pydantic import BaseModel, Field
 from typing import Literal
-from zombuild.config.types import OneOrSequence
 
 VERSION = r"^[0-9]+(\.[0-9]+){1,2}$"
 
 
-class MetaPackageDict(BaseModel):
-    # model_config = ConfigDict(extra="forbid")
-
+class PackageInfoConfig(BaseModel):
     """
-    Properties used to build mod.info that are likely common to the entire
+    Properties used to build mod.info that are possibly common to the entire
     package.
     """
 
@@ -30,9 +26,7 @@ class MetaPackageDict(BaseModel):
     incompatible: list[str] = Field(default_factory=list)
 
 
-class MetaModDict(MetaPackageDict):
-    # model_config = ConfigDict(extra="forbid")
-
+class ModInfoConfig(PackageInfoConfig):
     """
     Properties used to build mod.info
     """
@@ -50,5 +44,5 @@ class MetaModDict(MetaPackageDict):
     loadModAfter: list[str] = Field(default_factory=list)
     loadModBefore: list[str] = Field(default_factory=list)
 
-    pack: OneOrSequence[str] = Field(default_factory=list)
-    tiledef: OneOrSequence[str] = Field(default_factory=list)
+    pack: str | list[str] = Field(default_factory=list)
+    tiledef: str | list[str] = Field(default_factory=list)
