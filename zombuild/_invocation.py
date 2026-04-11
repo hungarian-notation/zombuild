@@ -4,10 +4,11 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from zombuild import paths
-from zombuild._invocation_base import InvocationBase
-from zombuild.tasks._default import LifecycleTask
-from zombuild.tasks._task import LifecycleTaskSpecifier
 
+from ._invocation_base import InvocationBase
+from .config.task import TaskConfig
+from .tasks._default import LifecycleTask
+from .tasks._task import LifecycleTaskSpecifier
 from ._exception import ZombuildException, unhandled_exception_reporter
 from ._package import resolve_package
 from .console import Console, Indent, Style, Text
@@ -20,7 +21,7 @@ from .tasks import (
     TaskPredicate,
 )
 
-from .config import PackageModel, TaskConfig
+from .config.package import PackageModel
 from .theme import Theme
 
 from ._arguments import ZombuildArguments

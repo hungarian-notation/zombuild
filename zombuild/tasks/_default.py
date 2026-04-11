@@ -16,7 +16,7 @@ from zombuild.tasks._filter import CallablePredicate, TaskPredicate
 
 if TYPE_CHECKING:
     from zombuild import Invocation
-    from zombuild.config import PackageModel
+    from zombuild.config.package import PackageModel
 
 
 class _DefaultTaskMeta(ABCMeta):

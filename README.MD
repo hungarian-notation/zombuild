@@ -18,7 +18,6 @@ Configured by a `zombuild.json` file in your project root.
     "preview": "assets/preview.png",
 
     "category": "features",
-    "versionMin": "42.0",
     "require": [ "my_other_mod" ],
     "incompatible": [  ],
 

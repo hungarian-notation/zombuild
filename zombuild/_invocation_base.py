@@ -6,7 +6,7 @@ if TYPE_CHECKING:
     from pathlib import Path
     from zombuild._arguments import ZombuildArguments
     from ._invocation_plugins import InvocationPlugins
-    from .config import PackageModel
+    from .config.package import PackageModel
     from .console import Console
     from .tasks import LifecycleTask
 

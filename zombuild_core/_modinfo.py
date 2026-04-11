@@ -2,7 +2,8 @@ import re
 
 from pathlib import Path, PurePosixPath
 from typing import Sequence, Tuple
-from zombuild import ExternalString, PackageModel
+from zombuild.config.package import PackageModel
+from zombuild.config.externalstring import ExternalString
 
 type ModInfoString = str
 type ModInfoStringList = Sequence[ModInfoString]

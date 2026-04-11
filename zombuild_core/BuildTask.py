@@ -1,14 +1,13 @@
 from typing import Sequence
 
 from zombuild import Invocation
-from zombuild.config._include import (
+from zombuild.config.include import (
     Include,
     PathOrInclude,
     normalize_include,
     normalize_includes,
 )
-from zombuild.config._types import ItemOrSequence
-from zombuild.config.definitions import ignore_default
+from zombuild.config.types import OneOrSequence
 from ._modinfo import generate_modinfo
 
 from pathlib import Path, PurePath
@@ -54,7 +53,7 @@ class BuildTask(FilesTask):
                 src=include.source,
                 dst=PurePath(dst) / include.prefix,
                 glob="**/*",
-                ignore=ignore_default(),
+                ignore=[],
             )
 
     def _plan_mod(self, mod_id: str) -> None:
