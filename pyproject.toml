@@ -18,3 +18,7 @@ zombuild = "zombuild:main"
 
 [tool.setuptools.dynamic]
 version = { attr = "zombuild.__version__" }
+
+[tool.black]
+line-length = 90
+target-version = ['py314']
