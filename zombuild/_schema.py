@@ -1,4 +1,4 @@
-from zombuild.config import PackageModel
+from zombuild.config.package import PackageModel
 
 
 import json

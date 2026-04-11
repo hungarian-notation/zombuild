@@ -1,7 +1,6 @@
 from typing import Sequence
 
-from zombuild.config._types import ItemOrSequence
-from zombuild.config.definitions import glob_default, ignore_default
+from zombuild.config.types import OneOrSequence
 
 
 from pydantic import BaseModel, Field
@@ -16,7 +15,7 @@ def normalize_include(include: PathOrInclude):
         return include
 
 
-def normalize_includes(include: ItemOrSequence[PathOrInclude]):
+def normalize_includes(include: OneOrSequence[PathOrInclude]):
     if isinstance(include, str | Include):
         return [normalize_include(include)]
     else:
@@ -27,14 +26,14 @@ class Include(BaseModel):
     source: str
     prefix: str
 
-    include: ItemOrSequence[str] = Field(default_factory=glob_default)
-    ignore: ItemOrSequence[str] = Field(default_factory=ignore_default)
+    include: OneOrSequence[str] = Field(default_factory=lambda: ["**/*"])
+    ignore: OneOrSequence[str] = Field(default_factory=list)
 
     @classmethod
     def from_string(cls, string: str):
         return Include(
             source=string,
             prefix="",
-            include=glob_default(),
-            ignore=ignore_default(),
+            include="**/*",
+            ignore=[],
         )

@@ -7,7 +7,7 @@ from pydantic import ValidationError
 
 from zombuild._exception import ZombuildConfigException, ZombuildException
 from zombuild._schema import write_schema
-from .config import PackageModel
+from .config.package import PackageModel
 
 
 def is_uri_with_schema(string):
