@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from zombuild import paths
+from zombuild import fs
 from zombuild import Invocation
 from zombuild.tasks import ActionableTask
 
@@ -24,7 +24,7 @@ class InstallTask(ActionableTask):
         invocation.lifecycle_task("install").depends_on(self)
 
     def execute(self) -> None:
-        workshop_path = paths.expand(
+        workshop_path = fs.expand(
             self.invocation.arguments.workshop,
             self.invocation.project_dir,
         )
@@ -74,7 +74,7 @@ class UninstallTask(ActionableTask):
         self.output_path = output_path
 
     def execute(self) -> None:
-        workshop_path = paths.expand(
+        workshop_path = fs.expand(
             self.invocation.arguments.workshop,
             self.invocation.project_dir,
         )

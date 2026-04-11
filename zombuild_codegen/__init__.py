@@ -4,7 +4,7 @@ from pydantic import BaseModel, ValidationError
 import zombuild
 
 from zombuild import Invocation, ZombuildPlugin
-from zombuild import paths
+from zombuild import fs
 from zombuild._exception import ZombuildConfigException
 from zombuild.tasks import ActionableTask
 
@@ -57,7 +57,7 @@ class EnumsTask(ActionableTask):
             self.generate(enum)
 
     def generate(self, enum: EnumConfig):
-        output = paths.expand(enum.output, self.invocation.project_dir)
+        output = fs.expand(enum.output, self.invocation.project_dir)
         source = self.get_source(enum)
 
         if not output.parent.exists():
