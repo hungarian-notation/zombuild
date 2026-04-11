@@ -1,18 +1,21 @@
 import zombuild
 
-from zombuild import paths
+from zombuild import fs
 from zombuild.plugins import ZombuildPlugin
 from zombuild import Invocation
 
 from zombuild.plugins.features import DefaultTaskFeature
 from zombuild_core.InstallTask import InstallTask, UninstallTask
 from zombuild_core.action_provider import ActionProviderFeature
-from .BuildTask import BuildTask, default_action, json_merge_action
+from ._action_translations import translations_action
+from ._action_jsonmerge import jsonmerge_action
+from ._action_default import default_action
+from .BuildTask import BuildTask
 from .CleanTask import CleanTask
 
 
 def output_path(invocation: Invocation):
-    return paths.expand(invocation.config.output, invocation.project_dir)
+    return fs.expand(invocation.config.output, invocation.project_dir)
 
 
 class CorePlugin(ZombuildPlugin):
@@ -35,8 +38,29 @@ class CorePlugin(ZombuildPlugin):
         self.register_task(UninstallTask)
 
         self.add_feature(DefaultTaskFeature(self.create_defaults, self.wire_defaults))
-        self.add_feature(ActionProviderFeature(self, "default", default_action))
-        self.add_feature(ActionProviderFeature(self, "json-merge", json_merge_action))
+
+        self.add_feature(
+            ActionProviderFeature(
+                self,
+                "default",
+                default_action,
+            )
+        )
+
+        self.add_feature(
+            ActionProviderFeature(
+                self,
+                "json-merge",
+                jsonmerge_action,
+            )
+        )
+        self.add_feature(
+            ActionProviderFeature(
+                self,
+                "translations",
+                translations_action,
+            )
+        )
 
     def wire_defaults(self, invocation: Invocation):
         self.task_build.depends_on(self.task_clean, optional=True)

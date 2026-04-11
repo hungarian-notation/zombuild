@@ -3,7 +3,6 @@ from warnings import warn
 from dataclasses import dataclass
 from pathlib import Path
 
-from zombuild import paths
 from zombuild.plugins._plugin import FeatureAccessors
 from zombuild.plugins.features import PluginFeature
 

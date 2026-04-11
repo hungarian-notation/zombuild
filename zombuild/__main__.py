@@ -15,7 +15,7 @@ from typing import Any, Sequence
 
 import colorama
 
-from zombuild import paths
+from zombuild import fs
 from zombuild._arguments import ZombuildArguments
 from ._invocation import Invocation
 
@@ -63,7 +63,7 @@ def main():
 
     args_namespace = parser.parse_args()
     args = ZombuildArguments(**vars(args_namespace))
-    project = paths.expand(args.project, Path.cwd().absolute())
+    project = fs.expand(args.project, Path.cwd().absolute())
     invocation = Invocation(args, project)
     invocation.execute()
 

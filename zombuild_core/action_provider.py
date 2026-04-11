@@ -1,4 +1,5 @@
-from typing import TYPE_CHECKING, Callable
+from pathlib import Path
+from typing import TYPE_CHECKING, Any, Callable, Protocol
 
 from zombuild.plugins._plugin import ZombuildPlugin
 from zombuild.plugins.features import PluginFeature
@@ -9,12 +10,16 @@ if TYPE_CHECKING:
     from pathlib import PurePath
 
 
+class BuildAction(Protocol):
+    def __call__(self, task: BuildTask, config: BuildConfig, prefix: Path) -> Any: ...
+
+
 class ActionProviderFeature(PluginFeature):
     def __init__(
         self,
         plugin: ZombuildPlugin,
         name: str,
-        action: Callable[[BuildTask, BuildConfig, PurePath]],
+        action: BuildAction,
     ) -> None:
         super().__init__(plugin)
         self.name = name

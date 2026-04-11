@@ -12,3 +12,5 @@ from .__main__ import main
 from ._invocation import Invocation, Tasks, Theme
 from ._invocation_base import InvocationBase
 from ._invocation_plugins import InvocationPlugins
+
+from .fs import Plan
