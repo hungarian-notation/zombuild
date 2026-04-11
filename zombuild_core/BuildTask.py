@@ -35,7 +35,6 @@ def default_action(task: BuildTask, build: BuildConfig, prefix: PurePath):
 
 
 def generate_output(inputs: list[Path], output: Path):
-    print(f"generate_output({output})")
     sink = dict()
 
     def merge(content: dict):
@@ -68,7 +67,6 @@ def generate_output(inputs: list[Path], output: Path):
 
 
 def json_merge_emit(task: BuildTask, output: Path, sources: list[Path]):
-    print(f"output: {output}")
     task.file(lambda _: generate_output(sources, output), output)
 
 
