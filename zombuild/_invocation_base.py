@@ -6,7 +6,7 @@ if TYPE_CHECKING:
     from pathlib import Path
     from zombuild._arguments import ZombuildArguments
     from ._invocation_plugins import InvocationPlugins
-    from .config.package import PackageModel
+    from .config.package import PackageConfig
     from .console import Console
     from .tasks import LifecycleTask
 
@@ -25,7 +25,7 @@ class InvocationBase(ABC):
 
     @property
     @abstractmethod
-    def config(self) -> PackageModel: ...
+    def config(self) -> PackageConfig: ...
 
     @property
     @abstractmethod
@@ -33,7 +33,7 @@ class InvocationBase(ABC):
 
     @property
     @abstractmethod
-    def loader(self) -> InvocationPlugins: ...
+    def plugins(self) -> InvocationPlugins: ...
 
     # LOGGING
 

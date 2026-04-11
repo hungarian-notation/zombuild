@@ -1,5 +1,3 @@
-from enum import Enum
-import sys
 
 from pydantic import BaseModel, ValidationError
 
@@ -7,11 +5,8 @@ import zombuild
 
 from zombuild import Invocation, ZombuildPlugin
 from zombuild import paths
-from zombuild import Theme
-from zombuild._exception import ZombuildConfigException, ZombuildException
-from zombuild.console import Text
-from zombuild.tasks import ActionableTask, DefaultTask
-from zombuild.tasks import ActionableTaskSpecifier, TaskSpecifier
+from zombuild._exception import ZombuildConfigException
+from zombuild.tasks import ActionableTask
 
 from zombuild_core import CorePlugin
 
@@ -124,14 +119,9 @@ class EnumsTask(ActionableTask):
 
 
 class CodeGenPlugin(ZombuildPlugin):
-
     def __init__(self, **kwargs) -> None:
-        super().__init__("codegen", **kwargs)
+        super().__init__(**kwargs)
         self.register_task(EnumsTask)
-
-    pass
-
-    def setup(self, invocation: Invocation) -> None: ...
 
 
 @zombuild.plugin()

@@ -1,2 +1,3 @@
-from ._decorator import plugin, PluginFactory
-from ._plugin import ZombuildPlugin
+from ._decorator import *
+from ._plugin import *
+from .features import *

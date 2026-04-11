@@ -1,6 +1,6 @@
+from zombuild.config.include import BuildActionLike
 from zombuild.config.withpath import WithPath
-from zombuild.config.include import PathOrInclude
-from zombuild.config.modinfo import MetaModDict, MetaPackageDict
+from zombuild.config.modinfo import ModInfoConfig, PackageInfoConfig
 from zombuild.config.plugin import PluginConfig
 from zombuild.config.task import TaskConfig
 
@@ -11,15 +11,13 @@ from pydantic import ConfigDict, Field
 from pathlib import Path
 from typing import Any, Literal
 
-from zombuild.config.types import OneOrSequence
 
-
-class ModConfig(MetaModDict, WithPath):
+class ModConfig(ModInfoConfig, WithPath):
     model_config = ConfigDict(extra="allow")
-    versions: dict[str | Literal["common"], OneOrSequence[PathOrInclude]]
+    versions: dict[str | Literal["common"], BuildActionLike | list[BuildActionLike]]
 
 
-class PackageModel(MetaPackageDict, WithPath):
+class PackageConfig(PackageInfoConfig, WithPath):
     model_config = ConfigDict(extra="ignore")
 
     schema_reference: str | None = Field(default=None, alias="$schema")

@@ -1,9 +1,11 @@
-from typing import Sequence
+from typing import Sequence, override
 from warnings import warn
 from dataclasses import dataclass
 from pathlib import Path
 
 from zombuild import paths
+from zombuild.plugins._plugin import FeatureAccessors
+from zombuild.plugins.features import PluginFeature
 
 from ._invocation_base import InvocationBase
 from .config.task import TaskConfig
@@ -21,18 +23,21 @@ from .tasks import (
     TaskPredicate,
 )
 
-from .config.package import PackageModel
+from .config.package import PackageConfig
 from .theme import Theme
 
 from ._arguments import ZombuildArguments
 from ._invocation_plugins import InvocationPlugins
 
+from .lifecycle_mixins import execute_setup
 
-class Tasks(InvocationBase):
 
-    def __init__(self) -> None:
+class Tasks:
+
+    def __init__(self, invocation: Invocation) -> None:
         self._tasks: list[ZombuildTask] = []
         self._lifecycle: dict[str, LifecycleTask] = dict()
+        self._invocation = invocation
 
     @property
     def tasks(self):
@@ -123,18 +128,18 @@ class Tasks(InvocationBase):
 
         if name in self._lifecycle:
             return self._lifecycle[name]
-        task = LifecycleTask(invocation=self, name=name)
+        task = LifecycleTask(invocation=self._invocation, name=name)
         self._lifecycle[name] = task
         self._tasks.append(task)
         return task
 
-    def init_tasks(self):
+    def load_tasks(self):
         """
         Initialize user-specified tasks.
         """
 
-        for task_name in self.config.tasks:
-            task_config = self.config.tasks[task_name]
+        for task_name in self._invocation.config.tasks:
+            task_config = self._invocation.config.tasks[task_name]
 
             if isinstance(task_config, str):
                 task_config = TaskConfig(type=task_config)
@@ -151,7 +156,7 @@ class Tasks(InvocationBase):
 
         [plugin_name, prototype_name] = prototype.split(".", 1)
 
-        task = self.loader.create_task(
+        task = self._invocation.plugins.create_task(
             plugin_name=plugin_name,
             prototype_name=prototype_name,
             task_name=name,
@@ -263,20 +268,20 @@ class Tasks(InvocationBase):
 
     def execute_task(self, task: ZombuildTask):
         if not isinstance(task, LifecycleTask):
-            self.console.print(
+            self._invocation.console.print(
                 Text("running task:", Theme.HEADING),
                 Text(task.specifier.name, Theme.KEYWORD),
             )
         task.execute()
 
 
-class Invocation(Tasks, InvocationBase):
+class Invocation(Tasks, InvocationBase, FeatureAccessors):
     """
     Represents an invocation of the build tool.
     """
 
     def __init__(
-        self, arguments: ZombuildArguments, project: Path | PackageModel
+        self, arguments: ZombuildArguments, project: Path | PackageConfig
     ) -> None:
         try:
             project = resolve_package(project)
@@ -285,7 +290,7 @@ class Invocation(Tasks, InvocationBase):
             self._console = Console()
             self._config = project
             self._loader = InvocationPlugins(self)
-            Tasks.__init__(self)
+            Tasks.__init__(self, self)
         except Exception as e:
             unhandled_exception_reporter(e)
 
@@ -298,8 +303,13 @@ class Invocation(Tasks, InvocationBase):
         return self._console
 
     @property
-    def loader(self):
+    def plugins(self) -> InvocationPlugins:
         return self._loader
+
+    @property
+    @override
+    def features(self):
+        return self.plugins.features
 
     @property
     def config(self):
@@ -310,12 +320,10 @@ class Invocation(Tasks, InvocationBase):
         return self._project_dir
 
     def execute_setup(self):
-        self.loader.init_plugins()
-        self.init_tasks()
-
-        self.loader.setup_plugins()
-        for task in self._tasks:
-            task.setup(self)
+        self.plugins.load_plugins()
+        self.plugins.setup_plugins()
+        self.load_tasks()
+        execute_setup(self._tasks, self)
 
     def execute_run(self):
         self.execute_tasks(self.arguments.tasks)
@@ -357,8 +365,8 @@ class Invocation(Tasks, InvocationBase):
         if self.arguments.list_types:
             c.print()
             c.print(Text("Task Types:", Theme.HEADING))
-            for plugin in self.loader.plugins:
-                for factory in plugin.task_prototypes:
+            for plugin in self.plugins.plugins:
+                for factory in plugin.tasks:
                     t = Text()
                     t.append(plugin.id)
                     t.append(".")

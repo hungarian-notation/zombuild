@@ -1,4 +1,5 @@
-from typing import TYPE_CHECKING, Callable, Literal
+from typing import TYPE_CHECKING, Callable, Literal, TypedDict
+import warnings
 
 
 from zombuild._exception import ZombuildException
@@ -28,6 +29,10 @@ class FilesTask(ActionableTask):
     """
 
     type FileAction = Callable[[Path]]
+
+    class Collected(TypedDict):
+        src: Path
+        dst: Path
 
     @dataclass
     class Item:
@@ -68,6 +73,16 @@ class FilesTask(ActionableTask):
             if not dst.is_relative_to(self._dstroot):
                 raise ZombuildException(f"{dst} is not relative to {self._dstroot}")
 
+        assert not isinstance(src, Path) or src.is_absolute()
+        assert dst.is_absolute()
+
+        for item in self._items:
+            if item.dst == dst:
+                ex = ZombuildException(f"multiple input paths for output: {dst}")
+                ex.add_note(f"source: {item.src}")
+                ex.add_note(f"source: {src}")
+                raise ex
+
         self._items.append(FilesTask.Item(src=src, dst=dst))
 
     @property
@@ -104,13 +119,12 @@ class FilesTask(ActionableTask):
     def file(self, src: FilesTask.FileAction | _PathLike | None, dst: _PathLike):
         if isinstance(src, _PathLike):
             src = self._relative(self._srcroot, src)
-
         self.append(
             src,
             self._relative(self._dstroot, dst),
         )
 
-    def glob(
+    def collect(
         self,
         src: _PathLike,
         dst: _PathLike,
@@ -123,6 +137,9 @@ class FilesTask(ActionableTask):
             ignore = [ignore]
 
         glob_root = self._relative(self._srcroot, src)
+        dst = self._relative(self._dstroot, dst)
+
+        collected: list[FilesTask.Collected] = []
 
         for matched in glob_root.glob(glob):
             if matched.is_dir():
@@ -133,8 +150,20 @@ class FilesTask(ActionableTask):
                 pass
             else:
                 dst_path = dst / matched.relative_to(glob_root)
-                self.file(src=matched, dst=dst_path)
-        return self
+                collected.append({"src": matched, "dst": dst_path})
+
+        return collected
+
+    def glob(
+        self,
+        src: _PathLike,
+        dst: _PathLike,
+        glob: str,
+        ignore: str | list[str] | None = None,
+    ):
+        collected = self.collect(src=src, dst=dst, glob=glob, ignore=ignore)
+        for pair in collected:
+            self.file(**pair)
 
     def execute(self) -> None:
         for item in self._items:
