@@ -11,7 +11,6 @@ from typing import TYPE_CHECKING, Iterable, Literal, overload
 from colorama import just_fix_windows_console
 import colorama
 
-
 if TYPE_CHECKING:
     from _typeshed import SupportsWrite
 
@@ -47,9 +46,7 @@ class Esc:
 
     def __str__(self) -> str:
         if sys.stdout.isatty():
-            return (
-                f"{self._esc}{self._prefix}{self._sep.join(self._codes)}{self._suffix}"
-            )
+            return f"{self._esc}{self._prefix}{self._sep.join(self._codes)}{self._suffix}"
         return ""
 
     def join(self, other: Esc):
@@ -109,9 +106,9 @@ class Style:
     MAGENTA             = Esc.gfx(35)
     CYAN                = Esc.gfx(36)
     WHITE               = Esc.gfx(37)
-    DEFAULT             = Esc.gfx(39)    
+    DEFAULT             = Esc.gfx(39)
 
-    BRIGHT_BLACK        = Esc.gfx(90) 
+    BRIGHT_BLACK        = Esc.gfx(90)
     GRAY                = Esc.gfx(90)
 
     BRIGHT_RED          = Esc.gfx(91)
@@ -179,7 +176,7 @@ type _CommonWhitespace = Literal[
     "        ",
 ]
 """
-    Hackish attempt to allow the Text __add__ overloads to hint that it always returns a Text 
+    Hackish attempt to allow the Text __add__ overloads to hint that it always returns a Text
     instance when added with a whitespace string.
 """
 

@@ -1,5 +1,6 @@
 from .console import Style
 
+
 class Theme:
     HEADING = Style.YELLOW + Style.BOLD
     KEYWORD = Style.WHITE + Style.BOLD

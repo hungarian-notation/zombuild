@@ -100,7 +100,3 @@ def jsonmerge_action(
     prefix: Path,
 ):
     _merge_action(task, config, prefix)
-
-
-
-

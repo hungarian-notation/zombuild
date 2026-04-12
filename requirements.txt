@@ -1,2 +1,2 @@
-build==1.4.2
-setuptools==82.0.1
+pydantic~=2.12.5
+colorama~=0.4.6

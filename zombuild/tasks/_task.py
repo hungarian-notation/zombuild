@@ -5,7 +5,6 @@ from typing import TYPE_CHECKING, Iterable, Protocol, override, runtime_checkabl
 from zombuild.lifecycle_mixins import WithSetupLifecycle
 from zombuild.tasks._filter import TaskPredicate
 
-
 if TYPE_CHECKING:
     from zombuild import Invocation
 

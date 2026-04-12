@@ -5,10 +5,13 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "zombuild"
-
 description = "a build system for project zomboid mods"
+
+readme = "README.MD"
+license = { file = "LICENSE.MD" }
+
+requires-python = ">=3.14"
 dependencies = ["pydantic~=2.12.5", "colorama~=0.4.6"]
-readme = "README"
 
 dynamic = ["version"]
 

@@ -42,9 +42,7 @@ class Tasks:
     def tasks(self):
         return self._tasks
 
-    def resolve_task(
-        self, filter: str | TaskPredicate, fuzzy=False
-    ) -> set[ZombuildTask]:
+    def resolve_task(self, filter: str | TaskPredicate, fuzzy=False) -> set[ZombuildTask]:
         """
         Gets the set of tasks matched by the fiter.
 

@@ -6,6 +6,7 @@ from zombuild_core.BuildTask import BuildTask
 from zombuild_core._action_jsonmerge import _merge_action
 from pathlib import Path
 
+
 def transform_translation(content: dict[str, Any]):
     results: list[tuple[str, str]] = []
 

@@ -47,9 +47,7 @@ class BuildTask(FilesTask):
             action = include.action
             provider = self.invocation.get_feature(match_actionfeature(action))
             if provider is None:
-                raise ZombuildException(
-                    f"no build action provider for action: {action}"
-                )
+                raise ZombuildException(f"no build action provider for action: {action}")
             provider.action(self, include, prefix)
 
     def _package(self):
@@ -85,9 +83,7 @@ class BuildTask(FilesTask):
         for version in mod.versions:
             if version != "common":
                 self.plan.file(
-                    src=lambda dst: dst.write_text(
-                        generate_modinfo(self.config, mod_id)
-                    ),
+                    src=lambda dst: dst.write_text(generate_modinfo(self.config, mod_id)),
                     dst=f"Contents/mods/{mod_id}/{version}/mod.info",
                 )
 
@@ -95,9 +91,7 @@ class BuildTask(FilesTask):
 
             self._actions(
                 config=BuildConfig.convert_list(version_path),
-                prefix=self.plan.resolve_destination(
-                    f"Contents/mods/{mod_id}/{version}"
-                ),
+                prefix=self.plan.resolve_destination(f"Contents/mods/{mod_id}/{version}"),
             )
 
     def execute(self) -> None:

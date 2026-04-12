@@ -1,7 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Protocol
 
-
 if TYPE_CHECKING:
     from pathlib import Path
     from zombuild._arguments import ZombuildArguments

@@ -55,7 +55,7 @@ Configured by a `zombuild.json` file in your project root.
     "plugins": [ "core", "codegen" ],
 
     "tasks": {
-        
+
     }
 }
 ```
@@ -66,7 +66,7 @@ Some mod.info fields may be set on either the top level object or the mod object
 
 The tool can be expanded via a plugin system. Check out `zombuild_codegen/` for an example of a single-file plugin.
 
-## Building 
+## Building
 
 Requires Python 3.14
 
