@@ -1,17 +1,31 @@
+# Zombuild
+# Copyright (C) 2026 Chris Bode and Zombuild Contributors
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import zombuild
-
-from zombuild import fs
-from zombuild.plugins import ZombuildPlugin
-from zombuild import Invocation
-
-from zombuild.plugins.features import DefaultTaskFeature
-from zombuild_core.InstallTask import InstallTask, UninstallTask
-from zombuild_core.action_provider import ActionProviderFeature
-from ._action_translations import translations_action
-from ._action_jsonmerge import jsonmerge_action
 from ._action_default import default_action
+from ._action_jsonmerge import jsonmerge_action
+from ._action_translations import translations_action
 from .BuildTask import BuildTask
 from .CleanTask import CleanTask
+from zombuild import fs
+from zombuild import Invocation
+from zombuild.plugins import ZombuildPlugin
+from zombuild.plugins.features import DefaultTaskFeature
+from zombuild_core.action_provider import ActionProviderFeature
+from zombuild_core.InstallTask import InstallTask
+from zombuild_core.InstallTask import UninstallTask
 
 
 def output_path(invocation: Invocation):

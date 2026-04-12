@@ -1,34 +1,47 @@
-from typing import Sequence, override
-from warnings import warn
+# Zombuild
+# Copyright (C) 2026 Chris Bode and Zombuild Contributors
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 from dataclasses import dataclass
 from pathlib import Path
-
-from zombuild.plugins._plugin import FeatureAccessors
-from zombuild.plugins.features import PluginFeature
-
-from ._invocation_base import InvocationBase
-from .config.task import TaskConfig
-from .tasks._default import LifecycleTask
-from .tasks._task import LifecycleTaskSpecifier
-from ._exception import ZombuildException, unhandled_exception_reporter
-from ._package import resolve_package
-from .console import Console, Indent, Style, Text
-
-from .tasks import (
-    ZombuildTask,
-    ActionableTaskSpecifier,
-    FuzzyTaskPredicate,
-    TaskNameFilter,
-    TaskPredicate,
-)
-
-from .config.package import PackageConfig
-from .theme import Theme
+from typing import override
+from typing import Sequence
+from warnings import warn
 
 from ._arguments import ZombuildArguments
+from ._exception import unhandled_exception_reporter
+from ._exception import ZombuildException
+from ._invocation_base import InvocationBase
 from ._invocation_plugins import InvocationPlugins
-
+from ._package import resolve_package
+from .config.package import PackageConfig
+from .config.task import TaskConfig
+from .console import Console
+from .console import Indent
+from .console import Style
+from .console import Text
 from .lifecycle_mixins import execute_setup
+from .tasks import ActionableTaskSpecifier
+from .tasks import FuzzyTaskPredicate
+from .tasks import TaskNameFilter
+from .tasks import TaskPredicate
+from .tasks import ZombuildTask
+from .tasks._default import LifecycleTask
+from .tasks._task import LifecycleTaskSpecifier
+from .theme import Theme
+from zombuild.plugins._plugin import FeatureAccessors
+from zombuild.plugins.features import PluginFeature
 
 
 class Tasks:

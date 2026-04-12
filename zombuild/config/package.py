@@ -1,15 +1,31 @@
+# Zombuild
+# Copyright (C) 2026 Chris Bode and Zombuild Contributors
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+from pathlib import Path
+from typing import Any
+from typing import Literal
+
+from pydantic import ConfigDict
+from pydantic import Field
+
 from zombuild.config.include import BuildActionLike
-from zombuild.config.withpath import WithPath
-from zombuild.config.modinfo import ModInfoConfig, PackageInfoConfig
+from zombuild.config.modinfo import ModInfoConfig
+from zombuild.config.modinfo import PackageInfoConfig
 from zombuild.config.plugin import PluginConfig
 from zombuild.config.task import TaskConfig
-
-
-from pydantic import ConfigDict, Field
-
-
-from pathlib import Path
-from typing import Any, Literal
+from zombuild.config.withpath import WithPath
 
 
 class ModConfig(ModInfoConfig, WithPath):

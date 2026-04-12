@@ -1,15 +1,33 @@
+# Zombuild
+# Copyright (C) 2026 Chris Bode and Zombuild Contributors
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 Provides a API somewhat like the `rich` library, but without including any dependencies beyond
 colorama which is already a transient dependency via pydantic.
 """
-
 import os
 import shutil
 import sys
 import textwrap
-from typing import TYPE_CHECKING, Iterable, Literal, overload
-from colorama import just_fix_windows_console
+from typing import Iterable
+from typing import Literal
+from typing import overload
+from typing import TYPE_CHECKING
+
 import colorama
+from colorama import just_fix_windows_console
 
 if TYPE_CHECKING:
     from _typeshed import SupportsWrite

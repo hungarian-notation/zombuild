@@ -1,18 +1,38 @@
-from typing import TYPE_CHECKING, Callable, Iterable
-from abc import ABC, ABCMeta, abstractmethod
+# Zombuild
+# Copyright (C) 2026 Chris Bode and Zombuild Contributors
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+from abc import ABC
+from abc import ABCMeta
+from abc import abstractmethod
 from pathlib import Path
+from typing import Callable
+from typing import Iterable
+from typing import TYPE_CHECKING
+
 from zombuild._exception import ZombuildException
 from zombuild._invocation_base import InvocationBase
+from zombuild.console import Indent
+from zombuild.console import Style
+from zombuild.console import Text
+from zombuild.tasks._filter import CallablePredicate
+from zombuild.tasks._filter import TaskPredicate
+from zombuild.tasks._task import ActionableTaskSpecifier
+from zombuild.tasks._task import LifecycleTaskSpecifier
+from zombuild.tasks._task import TaskSpecifier
+from zombuild.tasks._task import ZombuildTask
 from zombuild.theme import Theme
-from zombuild.console import Indent, Style, Text
-from zombuild.tasks._task import (
-    ActionableTaskSpecifier,
-    LifecycleTaskSpecifier,
-    TaskSpecifier,
-    ZombuildTask,
-)
-
-from zombuild.tasks._filter import CallablePredicate, TaskPredicate
 
 if TYPE_CHECKING:
     from zombuild import Invocation

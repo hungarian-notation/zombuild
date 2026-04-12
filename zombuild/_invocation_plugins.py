@@ -1,13 +1,30 @@
-from typing import TYPE_CHECKING, Callable, override
+# Zombuild
+# Copyright (C) 2026 Chris Bode and Zombuild Contributors
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+from typing import Callable
+from typing import override
+from typing import TYPE_CHECKING
 
 from zombuild import plugins
 from zombuild._exception import ZombuildException
 from zombuild.config import PluginConfig
 from zombuild.lifecycle_mixins import execute_setup
+from zombuild.plugins import ZombuildPlugin
 from zombuild.plugins._plugin import FeatureAccessors
 from zombuild.plugins.features import PluginFeature
 from zombuild.tasks import ZombuildTask
-from zombuild.plugins import ZombuildPlugin
 
 if TYPE_CHECKING:
     from ._invocation import Invocation

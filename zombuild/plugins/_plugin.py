@@ -1,30 +1,40 @@
-from abc import ABC, abstractmethod
-import importlib
+# Zombuild
+# Copyright (C) 2026 Chris Bode and Zombuild Contributors
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import importlib.util
-from importlib.machinery import ModuleSpec
-
 import inspect
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Iterable,
-    Sequence,
-    TypeGuard,
-    final,
-    overload,
-    override,
-)
+from abc import ABC
+from abc import abstractmethod
+from importlib.machinery import ModuleSpec
 from types import ModuleType
+from typing import Any
+from typing import Callable
+from typing import final
+from typing import Iterable
+from typing import overload
+from typing import override
+from typing import Sequence
+from typing import TYPE_CHECKING
+from typing import TypeGuard
 
+from ._decorator import _PLUGIN_ATTR
+from ._decorator import PluginFactory
+from .features import OptionsFeature
+from .features import PluginFeature
+from .features import TaskFeature
 from zombuild._exception import ZombuildException
-from .features import (
-    OptionsFeature,
-    PluginFeature,
-    TaskFeature,
-)
-
-from ._decorator import _PLUGIN_ATTR, PluginFactory
 
 if TYPE_CHECKING:
     from zombuild._invocation import Invocation
@@ -156,12 +166,16 @@ class ZombuildPlugin(FeatureAccessors):
 
     @classmethod
     def load(cls, package_name: str, /) -> PluginFactory:
-        search = [f"zombuild_{package_name}", package_name]
+
+        if package_name.startswith("zombuild_"):
+            search = [package_name]
+        else:
+            search = [f"zombuild_{package_name}", package_name]
+
         package: ModuleType | None = None
 
         for candidate in search:
             spec: ModuleSpec | None = importlib.util.find_spec(candidate)
-
             if spec is not None:
                 package = importlib.import_module(spec.name)
                 for membername in dir(package):
