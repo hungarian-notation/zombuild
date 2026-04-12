@@ -170,7 +170,7 @@ class ZombuildPlugin(FeatureAccessors):
         if package_name.startswith("zombuild_"):
             search = [package_name]
         else:
-            search = [f"zombuild_{package_name}", package_name]
+            search = [package_name, f"zombuild_{package_name}"]
 
         package: ModuleType | None = None
 
