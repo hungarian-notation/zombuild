@@ -13,14 +13,14 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 import re
-from operator import call
+from typing import TYPE_CHECKING
 from typing import Callable
 from typing import Protocol
-from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from zombuild.tasks._task import TaskSpecifier, ZombuildTask
+    from zombuild.tasks._task import TaskSpecifier
 
 
 class TaskPredicate(Protocol):
@@ -28,7 +28,6 @@ class TaskPredicate(Protocol):
 
 
 class CallablePredicate[T]:
-
     def __init__(self, callable: Callable[[T], bool]) -> None:
         self.callable = callable
 
@@ -45,13 +44,13 @@ class TaskNameFilter(TaskPredicate):
         return self.__task_name is None or self.__task_name == other.name
 
     def __str__(self) -> str:
-        return f"*:{self.__task_name or "*"}"
+        return f"*:{self.__task_name or '*'}"
 
 
 def _fuzzy_pattern(string: str):
     """
-    returns a regex pattern that matches strings that could be formed from the input string by
-    insertion of missing characters
+    returns a regex pattern that matches strings that could be formed from the input
+    string by insertion of missing characters
     """
     return "^.*" + ".*".join(map(re.escape, string)) + ".*$"
 

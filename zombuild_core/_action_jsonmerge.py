@@ -13,17 +13,15 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
-import glob
+
 import json
 from pathlib import Path
-from pathlib import PurePath
 from typing import Any
 from typing import Callable
 
 from zombuild._exception import ZombuildException
 from zombuild.config.include import BuildConfig
 from zombuild.config.include import IncludeConfig
-from zombuild.tasks._files import FilesTask
 from zombuild_core.BuildTask import BuildTask
 
 type JsonTransformer = Callable[[dict[str, Any]], dict[str, Any]]
@@ -37,13 +35,15 @@ def generate_output(
     def merge(content: dict):
         for key in content:
             if key in sink:
-                if sink[key] != content[key]:
-                    ex = ZombuildException(
-                        f"multiple json sources provide key {key}, but the values are not the same"
-                    )
-                    ex.add_note(f"key: {key}")
-                    ex.add_note(f"value #1: {sink[key]}")
-                    ex.add_note(f"value #2: {content[key]}")
+                if sink[key] == content[key]:
+                    continue
+                ex = ZombuildException(
+                    f"multiple json sources provide key {key}, "
+                    f"but the values are not the same"
+                )
+                ex.add_note(f"key: {key}")
+                ex.add_note(f"value #1: {sink[key]}")
+                ex.add_note(f"value #2: {content[key]}")
             else:
                 sink[key] = content[key]
 
@@ -53,7 +53,7 @@ def generate_output(
 
             if not isinstance(content, dict):
                 ex = ZombuildException(
-                    f"json-merge expects inputs to evaultate to a dict"
+                    "json-merge expects inputs to evaultate to a dict"
                 )
                 ex.add_note(f"input: {input}")
                 raise ex
@@ -86,7 +86,6 @@ def _merge_action(
     outputs: dict[Path, list[Path]] = {}
 
     for include in IncludeConfig.convert_list(config.target):
-
         collected = task.plan.collect(
             src=include.source,
             glob="**/*",

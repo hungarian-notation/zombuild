@@ -13,21 +13,20 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 """
-Provides a API somewhat like the `rich` library, but without including any dependencies beyond
-colorama which is already a transient dependency via pydantic.
+Provides a API somewhat like the `rich` library, but without including any dependencies
+beyond colorama which is already a transient dependency via pydantic.
 """
+
 import os
 import shutil
 import sys
 import textwrap
+from typing import TYPE_CHECKING
 from typing import Iterable
 from typing import Literal
 from typing import overload
-from typing import TYPE_CHECKING
-
-import colorama
-from colorama import just_fix_windows_console
 
 if TYPE_CHECKING:
     from _typeshed import SupportsWrite
@@ -64,7 +63,9 @@ class Esc:
 
     def __str__(self) -> str:
         if sys.stdout.isatty():
-            return f"{self._esc}{self._prefix}{self._sep.join(self._codes)}{self._suffix}"
+            return (
+                f"{self._esc}{self._prefix}{self._sep.join(self._codes)}{self._suffix}"
+            )
         return ""
 
     def join(self, other: Esc):
@@ -159,7 +160,6 @@ class Style:
 
 
 class Console:
-
     def print(
         self,
         *values: object,
@@ -194,13 +194,12 @@ type _CommonWhitespace = Literal[
     "        ",
 ]
 """
-    Hackish attempt to allow the Text __add__ overloads to hint that it always returns a Text
-    instance when added with a whitespace string.
+    Hackish attempt to allow the Text __add__ overloads to hint that it always returns a
+    Text instance when added with a whitespace string.
 """
 
 
 class Text:
-
     _unstyled = ("", str(Style.RESET))
 
     def __init__(
@@ -226,7 +225,7 @@ class Text:
         else:
             style = ""
             reset = ""
-        return f"{self._style}{"".join(self._strings)}{reset}"
+        return f"{self._style}{''.join(self._strings)}{reset}"
 
     @overload
     def __add__(self, other: _CommonWhitespace) -> Text: ...
@@ -259,7 +258,6 @@ class Text:
 
 
 class Indent:
-
     def __init__(self, renderable: str | Text | object, indent: str | int = 4) -> None:
         self._content = renderable
         self._indent = (" " * indent) if isinstance(indent, int) else str(indent)

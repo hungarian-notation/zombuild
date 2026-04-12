@@ -13,15 +13,16 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
-from ._default import ActionableTask
-from ._default import DefaultTask
-from ._default import LifecycleTask
-from ._files import *
-from ._filter import CallablePredicate
-from ._filter import FuzzyTaskPredicate
-from ._filter import TaskNameFilter
-from ._filter import TaskPredicate
-from ._task import ActionableTaskSpecifier
-from ._task import LifecycleTaskSpecifier
-from ._task import TaskSpecifier
-from ._task import ZombuildTask
+
+from ._default import ActionableTask as ActionableTask
+from ._default import DefaultTask as DefaultTask
+from ._default import LifecycleTask as LifecycleTask
+from ._files import FilesTask as FilesTask
+from ._filter import CallablePredicate as CallablePredicate
+from ._filter import FuzzyTaskPredicate as FuzzyTaskPredicate
+from ._filter import TaskNameFilter as TaskNameFilter
+from ._filter import TaskPredicate as TaskPredicate
+from ._task import ActionableTaskSpecifier as ActionableTaskSpecifier
+from ._task import LifecycleTaskSpecifier as LifecycleTaskSpecifier
+from ._task import TaskSpecifier as TaskSpecifier
+from ._task import ZombuildTask as ZombuildTask

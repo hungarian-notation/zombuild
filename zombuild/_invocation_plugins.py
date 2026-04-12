@@ -13,17 +13,17 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+from typing import TYPE_CHECKING
 from typing import Callable
 from typing import override
-from typing import TYPE_CHECKING
 
-from zombuild import plugins
 from zombuild._exception import ZombuildException
-from zombuild.config import PluginConfig
-from zombuild.lifecycle_mixins import execute_setup
+from zombuild.config.plugin import PluginConfig
+from zombuild.features import Feature
+from zombuild.features import FeatureAccessors
 from zombuild.plugins import ZombuildPlugin
-from zombuild.plugins._plugin import FeatureAccessors
-from zombuild.plugins.features import PluginFeature
+from zombuild.setup_mixin import execute_setup
 from zombuild.tasks import ZombuildTask
 
 if TYPE_CHECKING:
@@ -71,9 +71,7 @@ class InvocationPlugins(FeatureAccessors):
     def where(self, condition: Callable[[ZombuildPlugin], bool]):
         return [matched for matched in self.plugins if condition(matched)]
 
-    def with_feature(
-        self, condition: type[PluginFeature] | Callable[[PluginFeature], bool]
-    ):
+    def with_feature(self, condition: type[Feature] | Callable[[Feature], bool]):
         return self.where(lambda plugin: plugin.has_feature(condition))
 
     def create_task(

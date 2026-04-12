@@ -13,26 +13,30 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+
+from typing import TYPE_CHECKING
 from typing import Iterable
 
+if TYPE_CHECKING:
+    from zombuild._invocation import Invocation
 
-class WithSetupLifecycle[**P]:
-    def setup_early(self, *args: P.args, **kwargs: P.kwargs):
+
+class SetupMixin:
+    def setup_early(self, invocation: Invocation):
         pass
 
-    def setup(self, *args: P.args, **kwargs: P.kwargs):
+    def setup(self, invocation: Invocation):
         pass
 
-    def setup_late(self, *args: P.args, **kwargs: P.kwargs):
+    def setup_late(self, invocation: Invocation):
         pass
 
 
-def execute_setup[**P](
-    objects: Iterable[WithSetupLifecycle[P]], *args: P.args, **kwargs: P.kwargs
-):
+def execute_setup(objects: Iterable[SetupMixin], invocation: Invocation):
     for object in objects:
-        object.setup_early(*args, **kwargs)
+        object.setup_early(invocation)
     for object in objects:
-        object.setup(*args, **kwargs)
+        object.setup(invocation)
     for object in objects:
-        object.setup_late(*args, **kwargs)
+        object.setup_late(invocation)

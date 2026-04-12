@@ -13,8 +13,8 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 from pathlib import Path
-from pathlib import PurePath
 
 from zombuild.config.include import BuildConfig
 from zombuild.config.include import IncludeConfig

@@ -13,15 +13,17 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
-from dataclasses import dataclass
+
 from pathlib import Path
-from typing import override
 from typing import Sequence
-from warnings import warn
+from typing import override
+
+from zombuild.features import FeatureAccessors
+from zombuild.features import Features
 
 from ._arguments import ZombuildArguments
-from ._exception import unhandled_exception_reporter
 from ._exception import ZombuildException
+from ._exception import unhandled_exception_reporter
 from ._invocation_base import InvocationBase
 from ._invocation_plugins import InvocationPlugins
 from ._package import resolve_package
@@ -29,9 +31,8 @@ from .config.package import PackageConfig
 from .config.task import TaskConfig
 from .console import Console
 from .console import Indent
-from .console import Style
 from .console import Text
-from .lifecycle_mixins import execute_setup
+from .setup_mixin import execute_setup
 from .tasks import ActionableTaskSpecifier
 from .tasks import FuzzyTaskPredicate
 from .tasks import TaskNameFilter
@@ -40,12 +41,9 @@ from .tasks import ZombuildTask
 from .tasks._default import LifecycleTask
 from .tasks._task import LifecycleTaskSpecifier
 from .theme import Theme
-from zombuild.plugins._plugin import FeatureAccessors
-from zombuild.plugins.features import PluginFeature
 
 
 class Tasks:
-
     def __init__(self, invocation: Invocation) -> None:
         self._tasks: list[ZombuildTask] = []
         self._lifecycle: dict[str, LifecycleTask] = dict()
@@ -55,15 +53,17 @@ class Tasks:
     def tasks(self):
         return self._tasks
 
-    def resolve_task(self, filter: str | TaskPredicate, fuzzy=False) -> set[ZombuildTask]:
+    def resolve_task(
+        self, filter: str | TaskPredicate, fuzzy=False
+    ) -> set[ZombuildTask]:
         """
         Gets the set of tasks matched by the fiter.
 
         Args:
             filter: name or predicate
             fuzzy: Enable fuzzy matching.
-                Allows strings to match tasks whose names contain their characters in order, ignoring
-                extra intervening characters. Defaults to False.
+                Allows strings to match tasks whose names contain their characters in
+                order, ignoring extra intervening characters. Defaults to False.
 
         Returns:
             set of matched tasks
@@ -94,15 +94,15 @@ class Tasks:
 
     def require_task(self, filter: str | ZombuildTask, fuzzy=False) -> ZombuildTask:
         """
-        Variant of resolve_task that raises an exception if the filter does not resolve to one and
-        only one task.
+        Variant of resolve_task that raises an exception if the filter does not resolve
+        to one and only one task.
 
         Args:
             filter: name or predicate
             fuzzy: Enable fuzzy matching.
 
-                Allows strings to match tasks whose names contain their characters in order, ignoring
-                extra intervening characters. Defaults to False.
+                Allows strings to match tasks whose names contain their characters in
+                order, ignoring extra intervening characters. Defaults to False.
 
         Raises:
             ZombuildException: when no task is found
@@ -126,8 +126,8 @@ class Tasks:
         """
         Retrieve a named lifecycle task instance, creating it if it does not exist.
 
-        Lifecycle tasks do no work of their own, serving as top-level dependency tasks for
-        build phases.
+        Lifecycle tasks do no work of their own, serving as top-level dependency tasks
+        for build phases.
 
         Args:
             name: The name of the lifecycle task.
@@ -180,7 +180,8 @@ class Tasks:
         """
         Programatically register a task instance.
 
-        Intended for use by plugins, allowing them to register automatically created tasks.
+        Intended for use by plugins, allowing them to register automatically created
+        tasks.
 
         Returns:
             The created task.
@@ -229,15 +230,15 @@ class Tasks:
             required = task.get_dependencies(self.tasks, include_optional=False)
 
             for other in required:
-                if not other in seen:
+                if other not in seen:
                     queue.add(other)
                     seen.add(other)
         return seen
 
     def solve_tasks(self, tasks: Sequence[str], fuzzy=False) -> list[ZombuildTask]:
         """
-        Solves a list of task names from the command line, producing a list of those tasks and
-        their dependencies in an appropriate execution order.
+        Solves a list of task names from the command line, producing a list of those
+        tasks and their dependencies in an appropriate execution order.
 
         Args:
             tasks: list of task names to resolve via :func:`~require_task`
@@ -285,7 +286,7 @@ class Tasks:
         task.execute()
 
 
-class Invocation(Tasks, InvocationBase, FeatureAccessors):
+class Invocation(Tasks, InvocationBase, FeatureAccessors, Features):
     """
     Represents an invocation of the build tool.
     """
@@ -394,7 +395,7 @@ class Invocation(Tasks, InvocationBase, FeatureAccessors):
             elif command == "run":
                 self.execute_run()
             elif command in ("", None):
-                raise ZombuildException(f"missing command; try: `zombuild list`")
+                raise ZombuildException("missing command; try: `zombuild list`")
             else:
                 raise ZombuildException(f'unknown command: "{command}"')
         except Exception as e:

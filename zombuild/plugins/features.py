@@ -13,79 +13,39 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
-from abc import ABC
-from abc import abstractmethod
-from dataclasses import dataclass
-from typing import Any
-from typing import Callable
-from typing import Final
-from typing import override
-from typing import Protocol
-from typing import runtime_checkable
-from typing import TYPE_CHECKING
 
-from zombuild.lifecycle_mixins import WithSetupLifecycle
+from typing import TYPE_CHECKING
+from typing import Any
+from typing import Final
+
+from zombuild.features import Feature
+from zombuild.features import Features
 
 if TYPE_CHECKING:
     from zombuild.tasks._task import ZombuildTask
-    from zombuild._invocation import Invocation
+
     from ._plugin import ZombuildPlugin
 
 
-class PluginFeature(ABC, WithSetupLifecycle["Invocation"]):
+class PluginFeature(Feature):
     def __init__(self, plugin: ZombuildPlugin) -> None:
-        super().__init__()
+        super().__init__(provider=plugin)
         self.plugin: Final[ZombuildPlugin] = plugin
 
 
-class OptionsFeature(PluginFeature):
+class PluginOptionsFeature(PluginFeature):
     def __init__(self, plugin: ZombuildPlugin, options: dict[str, Any]) -> None:
         super().__init__(plugin=plugin)
         self.options = options
 
 
-class TaskFeature(PluginFeature):
+class TaskFeature(Feature):
     def __init__(
         self,
-        plugin: ZombuildPlugin,
+        provider: Features,
         task_type: type[ZombuildTask],
         task_alias: str | None = None,
     ) -> None:
-        super().__init__(plugin=plugin)
+        super().__init__(provider)
         self.task = task_type
         self.alias = task_alias if task_alias else task_type.__name__
-
-
-@dataclass
-class DefaultTaskFeature(PluginFeature):
-    create_tasks: Callable[[Invocation], None]
-    wire_tasks: Callable[[Invocation], None] | None = None
-
-    @override
-    def setup(self, invocation: Invocation):
-        self.create_tasks(invocation)
-
-    @override
-    def setup_late(self, invocation: Invocation):
-        if self.wire_tasks:
-            self.wire_tasks(invocation)
-
-
-# class DefaultTaskFactory[T: ZombuildTask](Protocol):
-#     def __call__(self, invocation: Invocation, **kwargs: Any) -> T: ...
-
-
-# class DefaultTaskAttribute[T: ZombuildTask](PluginAttribute):
-#     def __init__(
-#         self,
-#         plugin: ZombuildPlugin,
-#         factory: DefaultTaskFactory[T],
-#         *,
-#         factory_kwargs: dict | None = None,
-#     ) -> None:
-#         super().__init__(plugin=plugin)
-#         self.factory = factory
-#         self.factory_kwargs = factory_kwargs or {}
-
-#     def resolve(self, invocation: Invocation):
-#         return self.factory(invocation=invocation, **self.factory_kwargs)

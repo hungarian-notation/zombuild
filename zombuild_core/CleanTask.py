@@ -13,17 +13,14 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
-import shutil
+
 from pathlib import Path
-from typing import ClassVar
-from unittest.mock import sentinel
 
 from zombuild import Invocation
 from zombuild.tasks import ActionableTask
 
 
 class CleanTask(ActionableTask):
-
     def __init__(
         self,
         invocation: Invocation,

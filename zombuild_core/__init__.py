@@ -13,19 +13,22 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 import zombuild
+import zombuild.plugins
+from zombuild import Invocation
+from zombuild import fs
+from zombuild.features import DefaultTaskFeature
+from zombuild.plugins import ZombuildPlugin
+from zombuild_core.action_provider import ActionProviderFeature
+from zombuild_core.InstallTask import InstallTask
+from zombuild_core.InstallTask import UninstallTask
+
 from ._action_default import default_action
 from ._action_jsonmerge import jsonmerge_action
 from ._action_translations import translations_action
 from .BuildTask import BuildTask
 from .CleanTask import CleanTask
-from zombuild import fs
-from zombuild import Invocation
-from zombuild.plugins import ZombuildPlugin
-from zombuild.plugins.features import DefaultTaskFeature
-from zombuild_core.action_provider import ActionProviderFeature
-from zombuild_core.InstallTask import InstallTask
-from zombuild_core.InstallTask import UninstallTask
 
 
 def output_path(invocation: Invocation):
@@ -33,7 +36,6 @@ def output_path(invocation: Invocation):
 
 
 class CorePlugin(ZombuildPlugin):
-
     CLEAN_TASK = "clean-mod"
     BUILD_TASK = "build-mod"
     INSTALL_TASK = "install-mod"
@@ -115,7 +117,7 @@ class CorePlugin(ZombuildPlugin):
         )
 
 
-@zombuild.plugin()
+@zombuild.plugins.plugin()
 def plugin(invocation: Invocation, **kwargs):
 
     plugin = CorePlugin(

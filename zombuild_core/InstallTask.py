@@ -13,15 +13,15 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 from pathlib import Path
 
-from zombuild import fs
 from zombuild import Invocation
+from zombuild import fs
 from zombuild.tasks import ActionableTask
 
 
 class InstallTask(ActionableTask):
-
     def __init__(
         self,
         *,
@@ -51,7 +51,6 @@ class InstallTask(ActionableTask):
         # print(f"install_path={install_path}")
 
         if install_path.is_symlink() and not install_path.exists(follow_symlinks=True):
-
             self.perform_work(
                 lambda: install_path.unlink(),
                 "unlink broken symlink",
@@ -73,7 +72,6 @@ class InstallTask(ActionableTask):
 
 
 class UninstallTask(ActionableTask):
-
     def __init__(
         self,
         *,

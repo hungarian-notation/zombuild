@@ -13,6 +13,7 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 from pathlib import Path
 from typing import Any
 
@@ -38,6 +39,14 @@ def transform_translation(content: dict[str, Any]):
             segments.append(part)
         return "".join(segments)
 
+    def visit_list(k: str, v: list, context: list[str]):
+        for item in v:
+            if not isinstance(item, str):
+                raise ZombuildException(
+                    f"unexpected value of type {str(type(item))} in {name(*context, k)}"
+                )
+        results.append((name(*context, k), " ".join(v)))
+
     def visit(object: dict[str, Any], context: list[str]):
         for k, v in object.items():
             if isinstance(v, str):
@@ -45,15 +54,10 @@ def transform_translation(content: dict[str, Any]):
             elif isinstance(v, dict):
                 visit(v, [*context, k])
             elif isinstance(v, list):
-                for item in v:
-                    if not isinstance(item, str):
-                        raise ZombuildException(
-                            f"unexpected value of type {str(type(item))} in {name(*context,k)}"
-                        )
-                results.append((name(*context, k), " ".join(v)))
+                visit_list(k, v, context=context)
             else:
                 raise ZombuildException(
-                    f"unexpected value of type {str(type(v))} in {name(*context,k)}"
+                    f"unexpected value of type {str(type(v))} in {name(*context, k)}"
                 )
 
     visit(content, [])

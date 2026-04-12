@@ -13,88 +13,30 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 import importlib.util
 import inspect
-from abc import ABC
-from abc import abstractmethod
 from importlib.machinery import ModuleSpec
 from types import ModuleType
-from typing import Any
-from typing import Callable
-from typing import final
-from typing import Iterable
-from typing import overload
-from typing import override
-from typing import Sequence
 from typing import TYPE_CHECKING
-from typing import TypeGuard
+from typing import Any
+from typing import override
+
+from zombuild._exception import ZombuildException
+from zombuild.features import Feature
+from zombuild.features import FeatureAccessors
+from zombuild.features import Features
 
 from ._decorator import _PLUGIN_ATTR
 from ._decorator import PluginFactory
-from .features import OptionsFeature
-from .features import PluginFeature
+from .features import PluginOptionsFeature
 from .features import TaskFeature
-from zombuild._exception import ZombuildException
 
 if TYPE_CHECKING:
-    from zombuild._invocation import Invocation
     from zombuild.tasks._task import ZombuildTask
 
 
-class FeatureAccessors(ABC):
-    @property
-    @abstractmethod
-    def features(self) -> list[PluginFeature]: ...
-
-    @overload
-    def get_feature[T](self, type: type[T], /) -> T | None: ...
-
-    @overload
-    def get_feature[T: PluginFeature](
-        self, typeguard: Callable[[PluginFeature], TypeGuard[T]], /
-    ) -> T | None: ...
-
-    @overload
-    def get_feature(
-        self, predicate: Callable[[PluginFeature], bool], /
-    ) -> PluginFeature | None: ...
-
-    def get_feature(self, predicate: type | Callable[[PluginFeature], bool]) -> Any:
-        if isinstance(predicate_type := predicate, type):
-            predicate = lambda feature: isinstance(feature, predicate_type)
-
-        for attr in self.features:
-            if predicate(attr):
-                return attr
-        else:
-            return None
-
-    @overload
-    def get_features[T](self, type: type[T], /) -> Sequence[T]: ...
-
-    @overload
-    def get_features[T: PluginFeature](
-        self, typeguard: Callable[[PluginFeature], TypeGuard[T]], /
-    ) -> Sequence[T]: ...
-
-    @overload
-    def get_features(
-        self, predicate: Callable[[PluginFeature], bool], /
-    ) -> Sequence[PluginFeature]: ...
-
-    def get_features(
-        self, predicate: type | Callable[[PluginFeature], bool], /
-    ) -> Sequence[Any]:
-        if isinstance(predicate, type):
-            return [attr for attr in self.features if isinstance(attr, predicate)]
-        else:
-            return [attr for attr in self.features if predicate(attr)]
-
-    def has_feature(self, predicate: type | Callable[[PluginFeature], bool]):
-        return len(self.get_features(predicate)) > 0
-
-
-class ZombuildPlugin(FeatureAccessors):
+class ZombuildPlugin(FeatureAccessors, Features):
     """
     Base class implemented by all plugins.
 
@@ -102,7 +44,7 @@ class ZombuildPlugin(FeatureAccessors):
     """
 
     def __init__(self, *, id: str | None = None, **kwargs) -> None:
-        self._features: list[PluginFeature] = []
+        self._features: list[Feature] = []
 
         if id is None:
             module = inspect.getmodule(self.__class__)
@@ -118,7 +60,7 @@ class ZombuildPlugin(FeatureAccessors):
         self._id = id
 
         if kwargs:
-            self.add_feature(OptionsFeature(self, kwargs))
+            self.add_feature(PluginOptionsFeature(self, kwargs))
 
     @property
     @override
@@ -131,7 +73,7 @@ class ZombuildPlugin(FeatureAccessors):
 
     @property
     def options(self) -> dict[str, Any]:
-        attr = self.get_feature(OptionsFeature)
+        attr = self.get_feature(PluginOptionsFeature)
         if attr:
             return attr.options
         else:
@@ -144,7 +86,7 @@ class ZombuildPlugin(FeatureAccessors):
             tasks[attr.alias] = attr.task
         return tasks
 
-    def add_feature(self, attr: PluginFeature, /):
+    def add_feature(self, attr: Feature, /):
         self.features.append(attr)
 
     # def where(self, predicate: Callable[[PluginAttribute], bool]):
@@ -152,8 +94,8 @@ class ZombuildPlugin(FeatureAccessors):
 
     def register_task(self, factory: type[ZombuildTask], *, alias: str | None = None):
         """
-        Registers a task type that can be instantiated by the user via the package.tasks json
-        object.
+        Registers a task type that can be instantiated by the user via the package.tasks
+        json object.
 
         Args:
             factory: The task's type.

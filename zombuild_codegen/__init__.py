@@ -13,14 +13,16 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 from pydantic import BaseModel
 from pydantic import ValidationError
 
 import zombuild
-from zombuild import fs
+import zombuild.plugins
 from zombuild import Invocation
-from zombuild import ZombuildPlugin
+from zombuild import fs
 from zombuild._exception import ZombuildConfigException
+from zombuild.plugins._plugin import ZombuildPlugin
 from zombuild.tasks import ActionableTask
 from zombuild_core import CorePlugin
 
@@ -56,7 +58,7 @@ class EnumsTask(ActionableTask):
                 enum_models.append(EnumConfig(**item))
             except ValidationError as e:
                 raise ZombuildConfigException(
-                    f"invalid enum config",
+                    "invalid enum config",
                     validation_error=e,
                 )
 
@@ -75,7 +77,6 @@ class EnumsTask(ActionableTask):
         source = self.get_source(enum)
 
         if not output.parent.exists():
-
             self.perform_work(
                 lambda: output.parent.mkdir(parents=True),
                 "create directory",
@@ -96,7 +97,7 @@ class EnumsTask(ActionableTask):
 
             if not existing.startswith(self._HEADER):
                 raise Exception(
-                    f"output appears to be an existing file "
+                    "output appears to be an existing file "
                     "that is not a generated enum: {output}"
                 )
             else:
@@ -118,7 +119,7 @@ class EnumsTask(ActionableTask):
         variable_name = enum.type.replace(".", "_").lower()
         lines: list[str] = []
         lines.append(self._HEADER)
-        lines.append(f"")
+        lines.append("")
         lines.append(f"---@enum {enum.type}")
         lines.append(f"local {variable_name} = {{")
         for matched in self.invocation.project_dir.glob(enum.glob):
@@ -138,7 +139,7 @@ class CodeGenPlugin(ZombuildPlugin):
         self.register_task(EnumsTask)
 
 
-@zombuild.plugin()
+@zombuild.plugins.plugin()
 def plugin(invocation: Invocation, **kwargs):
 
     plugin = CodeGenPlugin(invocation=invocation)

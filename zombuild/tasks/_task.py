@@ -13,31 +13,27 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 from abc import ABC
 from abc import abstractmethod
 from dataclasses import dataclass
-from typing import Iterable
-from typing import override
-from typing import Protocol
-from typing import runtime_checkable
 from typing import TYPE_CHECKING
+from typing import Iterable
 
-from zombuild.lifecycle_mixins import WithSetupLifecycle
+from zombuild.setup_mixin import SetupMixin
 from zombuild.tasks._filter import TaskPredicate
 
 if TYPE_CHECKING:
-    from zombuild import Invocation
+    pass
 
 
 @dataclass(frozen=True)
 class TaskSpecifier(ABC):
-
     name: str
 
 
 @dataclass(frozen=True)
 class ActionableTaskSpecifier(TaskSpecifier):
-
     prototype: str
 
     def __str__(self) -> str:
@@ -46,7 +42,6 @@ class ActionableTaskSpecifier(TaskSpecifier):
 
 @dataclass(frozen=True)
 class LifecycleTaskSpecifier(TaskSpecifier):
-
     @property
     def group(self):
         return "@"
@@ -55,8 +50,7 @@ class LifecycleTaskSpecifier(TaskSpecifier):
         return f"@{self.name}"
 
 
-class ZombuildTask(ABC, WithSetupLifecycle["Invocation"]):
-
+class ZombuildTask(ABC, SetupMixin):
     @property
     @abstractmethod
     def specifier(self) -> TaskSpecifier: ...

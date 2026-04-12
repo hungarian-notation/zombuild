@@ -14,13 +14,10 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 #
 
 repos:
--   repo: https://github.com/psf/black
-    rev: 26.3.1
-    hooks:
-    -   id: black
 - repo: https://github.com/Lucas-C/pre-commit-hooks
   rev: v1.5.6
   hooks:
@@ -35,7 +32,11 @@ repos:
         - --fuzzy-match-generates-todo
         - --fuzzy-match-extra-lines-to-check
         - '10'
-- repo: https://github.com/asottile/reorder-python-imports
-  rev: v3.16.0
+- repo: https://github.com/astral-sh/ruff-pre-commit
+  # Ruff version.
+  rev: v0.15.10
   hooks:
-  -   id: reorder-python-imports
+    # Run the linter.
+    - id: ruff-check
+    # Run the formatter.
+    - id: ruff-format

@@ -13,6 +13,7 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 import json
 from pathlib import Path
 
@@ -22,3 +23,7 @@ from zombuild.config.package import PackageConfig
 def write_schema(path: Path):
     json_schema = PackageConfig.model_json_schema()
     path.write_text(json.dumps(json_schema, indent=2))
+
+
+def get_schema(name):
+    pass

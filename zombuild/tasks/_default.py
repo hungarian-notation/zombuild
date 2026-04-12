@@ -13,18 +13,15 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
-from abc import ABC
+
 from abc import ABCMeta
 from abc import abstractmethod
 from pathlib import Path
+from typing import TYPE_CHECKING
 from typing import Callable
 from typing import Iterable
-from typing import TYPE_CHECKING
 
-from zombuild._exception import ZombuildException
-from zombuild._invocation_base import InvocationBase
 from zombuild.console import Indent
-from zombuild.console import Style
 from zombuild.console import Text
 from zombuild.tasks._filter import CallablePredicate
 from zombuild.tasks._filter import TaskPredicate
@@ -76,8 +73,6 @@ class DefaultTask(ZombuildTask, metaclass=_DefaultTaskMeta):
         self.invocation.trace(Indent(" ".join(map(str, message)), indent))
 
     def log_work(self, work_type: str, **kwargs):
-        c = self.invocation.console
-
         self.log_verbose(Text(work_type))
         self.log_trace()
         for k in kwargs:
@@ -188,7 +183,6 @@ class ActionableTask(DefaultTask):
 
 
 class LifecycleTask(DefaultTask):
-
     def __init__(self, *, invocation: Invocation, name: str, **extra) -> None:
         super().__init__(
             invocation=invocation,

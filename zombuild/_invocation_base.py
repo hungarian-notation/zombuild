@@ -13,22 +13,22 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 from abc import ABC
 from abc import abstractmethod
-from typing import Protocol
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from pathlib import Path
+
     from zombuild._arguments import ZombuildArguments
+
     from ._invocation_plugins import InvocationPlugins
     from .config.package import PackageConfig
     from .console import Console
-    from .tasks import LifecycleTask
 
 
 class InvocationBase(ABC):
-
     # PROPERTIES
 
     @property

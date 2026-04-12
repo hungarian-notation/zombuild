@@ -13,16 +13,18 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 import json
 import urllib.parse
 from pathlib import Path
 
 from pydantic import ValidationError
 
-from .config.package import PackageConfig
 from zombuild._exception import ZombuildConfigException
 from zombuild._exception import ZombuildException
 from zombuild._schema import write_schema
+
+from .config.package import PackageConfig
 
 
 def is_uri_with_schema(string):
@@ -42,7 +44,7 @@ def resolve_package(project: Path | PackageConfig) -> PackageConfig:
                 project = path
 
     if not project.is_file():
-        e = ZombuildException(f"missing zombuild.json at project root")
+        e = ZombuildException("missing zombuild.json at project root")
         for path in search_path:
             e.add_note(f"tried: {path}")
         raise e

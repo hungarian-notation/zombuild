@@ -13,19 +13,19 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 from pathlib import Path
-from typing import Any
-from typing import Callable
-from typing import Protocol
 from typing import TYPE_CHECKING
+from typing import Any
+from typing import Protocol
 
 from zombuild.plugins._plugin import ZombuildPlugin
 from zombuild.plugins.features import PluginFeature
 
 if TYPE_CHECKING:
+
     from zombuild.config.include import BuildConfig
     from zombuild_core import BuildTask
-    from pathlib import PurePath
 
 
 class BuildAction(Protocol):

@@ -13,17 +13,13 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 import os
-import warnings
-from dataclasses import dataclass
 from pathlib import Path
 from pathlib import PurePath
-from typing import Any
-from typing import Callable
+from typing import TYPE_CHECKING
 from typing import Literal
 from typing import overload
-from typing import TYPE_CHECKING
-from typing import TypedDict
 
 from zombuild.fs import Plan
 from zombuild.tasks._default import ActionableTask
@@ -56,8 +52,8 @@ class FilesTask(ActionableTask):
     """
     A task that enacts a set of filesystem operations.
 
-    The `touch(...)` `file(...)` and `glob(...)` methods can be used by subclasses to describe the
-    desired operations.
+    The `touch(...)` `file(...)` and `glob(...)` methods can be used by subclasses to
+    describe the desired operations.
     """
 
     def __init__(

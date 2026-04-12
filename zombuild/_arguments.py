@@ -13,6 +13,7 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 from typing import Annotated
 from typing import Any
 from typing import Literal
@@ -30,7 +31,6 @@ def default_if_none(value: Any) -> Any:
 
 
 class ZombuildArguments(pydantic.BaseModel):
-
     project: str
 
     properties: dict = Field(

@@ -13,17 +13,17 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 import glob as libglob
 import os
-from dataclasses import asdict
 from dataclasses import dataclass
 from pathlib import Path
 from pathlib import PurePath
 from typing import Any
 from typing import Callable
 from typing import Literal
-from typing import overload
 from typing import Protocol
+from typing import overload
 
 from zombuild._exception import ZombuildException
 
@@ -70,7 +70,7 @@ def _pf(path: Any) -> str:
     try:
         path.relative_to(Path.cwd(), walk_up=True)
         return str(path)
-    except:
+    except ValueError:
         return str(path)
 
 
@@ -115,7 +115,8 @@ class Plan:
 
         self.mode: Literal["copy", "link"] = mode
         """
-        when set to `"link"`, the planner will create symlinks to the source files where possible
+        when set to `"link"`, the planner will create symlinks to the source files where
+        possible
         """
 
         self.items: list[Plan.PlanItem] = []
@@ -215,11 +216,12 @@ class Plan:
         Collects the list of path pairs described by the arguments.
 
         Args:
-            src: The source to match from. This controls which portion of the matched path is
-                retained when translated to a destination path.
+            src: The source to match from. This controls which portion of the matched
+            path is retained when translated to a destination path.
 
-                If given as a relative path, that path will be resolved against :attr:`srcroot`.
-                If `allow_magic_src` is True, `src` will be expanded as a glob pattern.
+            If given as a relative path, that path will be resolved against
+            :attr:`srcroot`. If `allow_magic_src` is True, `src` will be expanded as
+            a glob pattern.
 
             glob: glob pattern to match from src.
             ignore: _description_. Defaults to None.
@@ -312,7 +314,7 @@ class Plan:
             if not item.dst.parent.exists():
                 _auditable(
                     lambda: item.dst.parent.mkdir(parents=True),
-                    f"create directory",
+                    "create directory",
                     path=item.dst.parent,
                 )
 

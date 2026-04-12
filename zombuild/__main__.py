@@ -13,26 +13,27 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 import re
-from argparse import _ActionsContainer
-from argparse import _SubParsersAction
 from argparse import Action
 from argparse import ArgumentError
 from argparse import ArgumentParser
 from argparse import Namespace
+from argparse import _ActionsContainer
+from argparse import _SubParsersAction
 from pathlib import Path
 from typing import Any
 from typing import Sequence
 
 import colorama
 
-from ._invocation import Invocation
 from zombuild import fs
 from zombuild._arguments import ZombuildArguments
 
+from ._invocation import Invocation
+
 
 class DefineAction(Action):
-
     def __call__(
         self,
         parser: ArgumentParser,
@@ -82,6 +83,11 @@ def main():
 def _set_universal(parser: _ActionsContainer):
     parser.add_argument("-D", "--define", action=DefineAction)
     parser.add_argument("-v", "--verbose", action="count", default=0)
+
+
+def _define_emitschema(subparsers: _SubParsersAction[ArgumentParser]):
+    cmd = subparsers.add_parser("schema")
+    cmd.add_argument("which", metavar="task", nargs="1", help="schema to emit")
 
 
 def _define_run(subparsers: _SubParsersAction[ArgumentParser]):

@@ -13,13 +13,13 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 import sys
 import traceback
 
 from pydantic import ValidationError
 
 from zombuild.console import Indent
-from zombuild.console import Style
 from zombuild.console import Text
 from zombuild.theme import Theme
 
@@ -29,7 +29,6 @@ class ZombuildException(Exception):
 
 
 class ZombuildConfigException(ZombuildException):
-
     def __init__(self, *args: object, validation_error: ValidationError) -> None:
         super().__init__(*args)
 
@@ -56,7 +55,7 @@ def _format_notes(e: BaseException):
 def unhandled_exception_reporter(e: Exception):
     if isinstance(e, ZombuildConfigException):
         _format_traceback(e)
-        print(Text(f"Config Error:", Theme.ERROR), end=" ")
+        print(Text("Config Error:", Theme.ERROR), end=" ")
         print(e.validation_error.title)
         print()
 
@@ -82,7 +81,7 @@ def unhandled_exception_reporter(e: Exception):
 
     if isinstance(e, ZombuildException):
         _format_traceback(e)
-        print(Text(f"Build Error:", Theme.ERROR), end=" ")
+        print(Text("Build Error:", Theme.ERROR), end=" ")
         print(e)
         if hasattr(e, "__notes__") and e.__notes__:
             print()
