@@ -1,8 +1,8 @@
 [project]
 name = "zombuild"
-version = "0.1.1"
+version = "0.1.2"
 description = "modula build system for project zomboid"
-authors = [{ name = "Your Name", email = "you@example.com" }]
+authors = [{ name = "Chris Bode" }]
 license = "AGPL-3.0-or-later"
 readme = "README.md"
 requires-python = ">=3.14"
@@ -14,6 +14,14 @@ scripts = { zombuild = "zombuild:main" }
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.poetry]
+packages = [
+    { include = "zombuild" },
+    { include = "zombuild_core" },
+    { include = "zombuild_codegen" },
+]
+
 
 [tool.ruff]
 
