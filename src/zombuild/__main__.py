@@ -52,6 +52,7 @@ class DefineAction(Action):
     pass
 
 
+
 def main():
     colorama.just_fix_windows_console()
 
