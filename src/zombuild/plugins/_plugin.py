@@ -14,16 +14,15 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import inspect
 from typing import TYPE_CHECKING
 from typing import Any
-from typing import override
 
-from zombuild._exception import ZombuildException
-from zombuild.features import Feature
-from zombuild.features import FeatureAccessors
-from zombuild.features import Features
+from zombuild.composite.component import Composite
+from zombuild.composite.component import MutableComponents
+from zombuild.composite.component_accessors import ComponentAccessorsMixin
+from zombuild.composite.component_property import component_filter
 
+from .features import PluginFeature
 from .features import PluginOptionsFeature
 from .features import TaskFeature
 
@@ -31,44 +30,27 @@ if TYPE_CHECKING:
     from zombuild.tasks._task import ZombuildTask
 
 
-class ZombuildPlugin(FeatureAccessors, Features):
+class ZombuildPlugin(ComponentAccessorsMixin, Composite):
     """
     Base class implemented by all plugins.
 
     A plugin is chiefly a collection of PluginAttributes that describe what
     """
 
-    def __init__(self, *, id: str | None = None, **kwargs) -> None:
-        self._features: list[Feature] = []
-
-        if id is None:
-            module = inspect.getmodule(self.__class__)
-            package = module.__package__ if module else None
-            if package is not None:
-                id = package
-                if id.startswith("zombuild_"):
-                    id = id.removeprefix("zombuild_")
-
-        if id is None:
-            raise ZombuildException(f"could not infer plugin id: {self}")
-
-        self._id = id
-
+    def __init__(self, **kwargs) -> None:
+        super().__init__()
+        self.id: str = getattr(type(self), "_plugin_id")
         if kwargs:
-            self.add_feature(PluginOptionsFeature(self, kwargs))
+            self.add(PluginOptionsFeature(self, kwargs))
 
-    @property
-    @override
-    def features(self):
-        return self._features
+    features = component_filter(PluginFeature)
 
-    @property
-    def id(self):
-        return self._id
+    components = MutableComponents()
+    add = components.mutator()
 
     @property
     def options(self) -> dict[str, Any]:
-        attr = self.get_feature(PluginOptionsFeature)
+        attr = self.get(PluginOptionsFeature)
         if attr:
             return attr.options
         else:
@@ -77,12 +59,9 @@ class ZombuildPlugin(FeatureAccessors, Features):
     @property
     def tasks(self):
         tasks: dict[str, type[ZombuildTask]] = {}
-        for attr in self.get_features(TaskFeature):
+        for attr in self.where(TaskFeature):
             tasks[attr.alias] = attr.task
         return tasks
-
-    def add_feature(self, attr: Feature, /):
-        self.features.append(attr)
 
     # def where(self, predicate: Callable[[PluginAttribute], bool]):
     #     return [attr for attr in self.attributes if predicate(attr)]
@@ -99,4 +78,4 @@ class ZombuildPlugin(FeatureAccessors, Features):
                 If `None`, the name of the task type will be used.
                 Defaults to `None`.
         """
-        self.add_feature(TaskFeature(self, factory, alias))
+        self.add(TaskFeature(factory, alias))

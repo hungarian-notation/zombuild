@@ -16,19 +16,18 @@
 
 from importlib.metadata import entry_points
 from typing import TYPE_CHECKING
-from typing import Callable
-from typing import override
+from typing import Iterable
 
+from zombuild._context import context_config
 from zombuild._exception import ZombuildException
+from zombuild.composite.hooks import execute_hook
+from zombuild.config.package import PackageConfig
 from zombuild.config.plugin import PluginConfig
-from zombuild.features import Feature
-from zombuild.features import FeatureAccessors
 from zombuild.plugins import ZombuildPlugin
-from zombuild.setup_mixin import execute_setup
-from zombuild.tasks import ZombuildTask
+from zombuild.setup_hook import SetupHook
 
 if TYPE_CHECKING:
-    from ._invocation import Invocation
+    pass
 
 
 def find_plugin(name):
@@ -36,6 +35,7 @@ def find_plugin(name):
         if plugin.name == name:
             loaded = plugin.load()
             if isinstance(loaded, type) and issubclass(loaded, ZombuildPlugin):
+                setattr(loaded, "_plugin_id", name)
                 return loaded
             else:
                 raise Exception(
@@ -46,38 +46,27 @@ def find_plugin(name):
         raise Exception(f"no such plugin: {name}")
 
 
-class InvocationPlugins(FeatureAccessors):
-    def __init__(self, invocation: Invocation) -> None:
+class Plugins:
+    def __init__(self) -> None:
         self._plugins: dict[str, ZombuildPlugin] = dict()
-        self._invocation = invocation
 
     @property
-    def package(self):
-        return self._invocation.config
-
-    @property
-    def plugins(self):
+    def plugins(self) -> Iterable[ZombuildPlugin]:
         return self._plugins.values()
 
-    @property
-    @override
-    def features(self):
-        return [feature for plugin in self.plugins for feature in plugin.features]
-
-    def load_plugins(self):
-        for plugin in self.package.plugins:
+    def load(self, *, package: PackageConfig | None = None, skip_setup=False):
+        package = package or context_config()
+        for plugin in package.plugins:
             config = PluginConfig.convert(plugin)
-
             factory = find_plugin(config.plugin)
-            plugin = factory(
-                invocation=self._invocation,
-                **(config.model_extra or {}),
-            )
+            plugin = factory(**(config.model_extra or {}))
             self._plugins[plugin.id] = plugin
 
-    def setup_plugins(self):
-        features = [feature for plugin in self.plugins for feature in plugin.features]
-        execute_setup(features, self._invocation)
+        if not skip_setup:
+            self.setup()
+
+    def setup(self):
+        execute_hook(SetupHook, self.plugins)
 
     def plugin(self, name: str):
         plugin = self._plugins.get(name)
@@ -85,30 +74,47 @@ class InvocationPlugins(FeatureAccessors):
             raise ZombuildException(f"no such plugin: {name}")
         return plugin
 
-    def where(self, condition: Callable[[ZombuildPlugin], bool]):
-        return [matched for matched in self.plugins if condition(matched)]
 
-    def with_feature(self, condition: type[Feature] | Callable[[Feature], bool]):
-        return self.where(lambda plugin: plugin.has_feature(condition))
+# class InvocationPlugins(ComponentAccessorsMixin):
+#     def __init__(self, invocation: Invocation) -> None:
+#         self._plugins: dict[str, ZombuildPlugin] = dict()
+#         self._invocation = invocation
 
-    def create_task(
-        self,
-        plugin_name: str,
-        prototype_name: str,
-        task_name: str,
-        args: dict,
-    ) -> ZombuildTask:
+#     @property
+#     def package(self):
+#         return self._invocation.config
 
-        plugin = self.plugin(plugin_name)
-        factory = plugin.tasks.get(prototype_name)
+#     @property
+#     def plugins(self) -> Iterable[ZombuildPlugin]:
+#         return self._plugins.values()
 
-        if factory is None:
-            raise ZombuildException(f"no such task: {plugin_name}.{prototype_name}")
+#     @property
+#     @override
+#     def components(self):
+#         return components(self.plugins)
 
-        args = dict(**plugin.options, **args)
-        args["invocation"] = self._invocation
-        args["name"] = task_name
+#     def load_plugins(self):
+#         for plugin in self.package.plugins:
+#             config = PluginConfig.convert(plugin)
 
-        task = factory(**args)
+#             factory = find_plugin(config.plugin)
+#             plugin = factory(
+#                 invocation=self._invocation,
+#                 **(config.model_extra or {}),
+#             )
+#             self._plugins[plugin.id] = plugin
 
-        return task
+#     def setup_plugins(self):
+#         execute_hook(SetupHook, self.plugins)
+
+#     def plugin(self, name: str):
+#         plugin = self._plugins.get(name)
+#         if plugin is None:
+#             raise ZombuildException(f"no such plugin: {name}")
+#         return plugin
+
+#     def plugin_where(self, condition: Callable[[ZombuildPlugin], bool]):
+#         return [matched for matched in self.plugins if condition(matched)]
+
+#     def plugin_with(self, condition):
+#         return (plugin for plugin in self.plugins if plugin.has(condition))

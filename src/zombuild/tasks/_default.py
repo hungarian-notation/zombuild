@@ -16,24 +16,23 @@
 
 from abc import ABCMeta
 from abc import abstractmethod
-from pathlib import Path
 from typing import TYPE_CHECKING
 from typing import Callable
 from typing import Iterable
 
+from zombuild._context import context
+from zombuild._context import context_arguments
+from zombuild.composite.component import Composite
+from zombuild.composite.component import EmptyComponents
+from zombuild.composite.component import MutableComponents
 from zombuild.console import Indent
 from zombuild.console import Text
-from zombuild.tasks._filter import CallablePredicate
-from zombuild.tasks._filter import TaskPredicate
-from zombuild.tasks._task import ActionableTaskSpecifier
-from zombuild.tasks._task import LifecycleTaskSpecifier
-from zombuild.tasks._task import TaskSpecifier
+from zombuild.functional_helpers import Predicate
 from zombuild.tasks._task import ZombuildTask
 from zombuild.theme import Theme
 
 if TYPE_CHECKING:
     from zombuild import Invocation
-    from zombuild.config.package import PackageConfig
 
 
 class _DefaultTaskMeta(ABCMeta):
@@ -42,18 +41,21 @@ class _DefaultTaskMeta(ABCMeta):
         return cls.__name__
 
 
+def equality_predicate(value: object):
+    return lambda other: other == value
+
+
 class DefaultTask(ZombuildTask, metaclass=_DefaultTaskMeta):
     """
     A general implementation of the ZombuildTask protocol that mainly handles dependency
     management, leaving execution details to subclasses.
     """
 
-    def __init__(self, *, invocation: Invocation, specifier: TaskSpecifier) -> None:
-        self._invocation = invocation
-        self._dependencies: set[TaskPredicate] = set()
-        self._optional_dependencies: set[TaskPredicate] = set()
+    def __init__(self, *, name: str) -> None:
+        self._dependencies: set[Predicate[ZombuildTask]] = set()
+        self._optional_dependencies: set[Predicate[ZombuildTask]] = set()
         self._didwork = False
-        self._specifier = specifier
+        self._name = name
 
     @classmethod
     def _warn_extra(cls: type, name: str, extra: dict[str, object]):
@@ -88,7 +90,7 @@ class DefaultTask(ZombuildTask, metaclass=_DefaultTaskMeta):
         self, work: Callable[[], T], work_type: str, **kwargs
     ) -> T | None:
         result = None
-        if not self.arguments.dry_run:
+        if not context.get().arguments.dry_run:
             try:
                 result = work()
             except Exception as e:
@@ -104,34 +106,22 @@ class DefaultTask(ZombuildTask, metaclass=_DefaultTaskMeta):
         return cls.__name__
 
     @property
-    def specifier(self) -> TaskSpecifier:
-        return self._specifier
+    def name(self) -> str:
+        return self._name
 
     @property
     def invocation(self) -> Invocation:
-        return self._invocation
-
-    @property
-    def arguments(self):
-        return self.invocation.arguments
-
-    @property
-    def config(self) -> PackageConfig:
-        return self._invocation.config
-
-    @property
-    def project(self) -> Path:
-        return self._invocation.project_dir
+        return context.get().invocation
 
     def _collect(
         self,
         tasks: Iterable[ZombuildTask],
-        filters: Iterable[TaskPredicate],
+        filters: Iterable[Predicate[ZombuildTask]],
         out: set[ZombuildTask],
     ):
         for task in tasks:
             for filter in filters:
-                if filter.test(task.specifier):
+                if filter(task):
                     out.add(task)
                     break
 
@@ -146,10 +136,15 @@ class DefaultTask(ZombuildTask, metaclass=_DefaultTaskMeta):
             self._collect(tasks, self._optional_dependencies, matched)
         return matched
 
-    def depends_on(self, other: TaskPredicate | ZombuildTask, optional: bool = False):
+    def depends_on(
+        self, other: Predicate[ZombuildTask] | ZombuildTask, optional: bool = False
+    ):
+
+        if context_arguments().verbose > 3:
+            print("dependency", self, other, optional)
+
         if isinstance(other, DefaultTask | ZombuildTask):
-            other_task = other
-            other = CallablePredicate(lambda task: task == other_task.specifier)
+            other = equality_predicate(other)
         if optional:
             self._optional_dependencies.add(other)
         else:
@@ -164,32 +159,27 @@ class DefaultTask(ZombuildTask, metaclass=_DefaultTaskMeta):
     # def outputs(self) -> TaskOutputs: ...
 
     def __repr__(self) -> str:
-        return f"{self.specifier}"
+        return f"{self.name}"
 
     @abstractmethod
     def execute(self) -> None: ...
 
 
-class ActionableTask(DefaultTask):
-    def __init__(self, *, invocation: Invocation, name: str, **extra) -> None:
-        super().__init__(
-            invocation=invocation,
-            specifier=ActionableTaskSpecifier(
-                name=name,
-                prototype=self.__class__.__name__,
-            ),
-        )
+class ActionableTask(DefaultTask, Composite):
+    def __init__(self, *, name: str, **extra) -> None:
+        super().__init__(name=name)
         self._warn_extra(name, extra)
+
+    components = MutableComponents()
+    add = components.mutator()
 
 
 class LifecycleTask(DefaultTask):
-    def __init__(self, *, invocation: Invocation, name: str, **extra) -> None:
-        super().__init__(
-            invocation=invocation,
-            specifier=LifecycleTaskSpecifier(name=name),
-        )
-
+    def __init__(self, *, name: str, **extra) -> None:
+        super().__init__(name=name)
         self._warn_extra(name, extra)
 
     def execute(self) -> None:
         pass
+
+    components = EmptyComponents()

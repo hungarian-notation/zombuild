@@ -17,13 +17,16 @@
 from abc import ABC
 from abc import abstractmethod
 from typing import TYPE_CHECKING
+from warnings import deprecated
+
+from zombuild._context import context_arguments
+from zombuild._invocation_plugins import Plugins
 
 if TYPE_CHECKING:
     from pathlib import Path
 
     from zombuild._arguments import ZombuildArguments
 
-    from ._invocation_plugins import InvocationPlugins
     from .config.package import PackageConfig
     from .console import Console
 
@@ -32,35 +35,40 @@ class InvocationBase(ABC):
     # PROPERTIES
 
     @property
+    @deprecated("use context module")
     @abstractmethod
     def arguments(self) -> ZombuildArguments: ...
 
     @property
+    @deprecated("use context module")
     @abstractmethod
     def project_dir(self) -> Path: ...
 
     @property
+    @deprecated("use context module")
     @abstractmethod
     def config(self) -> PackageConfig: ...
 
     @property
+    @deprecated("use context module")
     @abstractmethod
     def console(self) -> Console: ...
 
     @property
+    @deprecated("use context module")
     @abstractmethod
-    def plugins(self) -> InvocationPlugins: ...
+    def plugins(self) -> Plugins: ...
 
     # LOGGING
 
     def info(self, *message: object):
-        if self.arguments.verbose >= 0:
-            self.console.print(*message)
+        if context_arguments().verbose >= 0:  # pyright: ignore[reportDeprecated]
+            print(*message)  # pyright: ignore[reportDeprecated]
 
     def verbose(self, *message: object):
-        if self.arguments.verbose > 0:
-            self.console.print(*message)
+        if context_arguments().verbose > 0:  # pyright: ignore[reportDeprecated]
+            print(*message)  # pyright: ignore[reportDeprecated]
 
     def trace(self, *message: object):
-        if self.arguments.verbose > 1:
-            self.console.print(*message)
+        if context_arguments().verbose > 1:  # pyright: ignore[reportDeprecated]
+            print(*message)  # pyright: ignore[reportDeprecated]

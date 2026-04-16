@@ -17,9 +17,9 @@
 from typing import TYPE_CHECKING
 from typing import Any
 from typing import Final
+from typing import Iterable
 
-from zombuild.features import Feature
-from zombuild.features import Features
+from zombuild.composite.types import Component
 
 if TYPE_CHECKING:
     from zombuild.tasks._task import ZombuildTask
@@ -27,9 +27,22 @@ if TYPE_CHECKING:
     from ._plugin import ZombuildPlugin
 
 
+# setup_hook = HookType[Callable[[], int]]("setup")
+# setup_late_hook = HookType[Callable[[], None]]("setup_late")
+
+
+class Feature(Component):
+    pass
+
+
+class FeaturesMixinProtocol[T: Feature]:
+    @property
+    def features(self) -> Iterable[T]: ...
+
+
 class PluginFeature(Feature):
     def __init__(self, plugin: ZombuildPlugin) -> None:
-        super().__init__(provider=plugin)
+        super().__init__()
         self.plugin: Final[ZombuildPlugin] = plugin
 
 
@@ -39,13 +52,12 @@ class PluginOptionsFeature(PluginFeature):
         self.options = options
 
 
-class TaskFeature(Feature):
+class TaskFeature(Component):
     def __init__(
         self,
-        provider: Features,
         task_type: type[ZombuildTask],
         task_alias: str | None = None,
     ) -> None:
-        super().__init__(provider)
+        super().__init__()
         self.task = task_type
         self.alias = task_alias if task_alias else task_type.__name__

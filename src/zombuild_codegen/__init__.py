@@ -17,10 +17,9 @@
 from pydantic import BaseModel
 from pydantic import ValidationError
 
-import zombuild
-import zombuild.plugins
 from zombuild import Invocation
 from zombuild import fs
+from zombuild._context import context_invocation
 from zombuild._exception import ZombuildConfigException
 from zombuild.plugins._plugin import ZombuildPlugin
 from zombuild.tasks import ActionableTask
@@ -64,7 +63,8 @@ class EnumsTask(ActionableTask):
 
         self.enums = enum_models
 
-    def setup(self, invocation: Invocation) -> None:
+    def setup(self) -> None:
+        invocation = context_invocation()
         invocation.lifecycle_task("build").depends_on(self)
         invocation.require_task(CorePlugin.BUILD_TASK).depends_on(self)
 
@@ -137,11 +137,3 @@ class CodeGenPlugin(ZombuildPlugin):
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
         self.register_task(EnumsTask)
-
-
-@zombuild.plugins.plugin()
-def plugin(invocation: Invocation, **kwargs):
-
-    plugin = CodeGenPlugin(invocation=invocation)
-
-    return plugin

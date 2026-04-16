@@ -19,7 +19,10 @@ from typing import Any
 from typing import Sequence
 from typing import TypeGuard
 
-from zombuild import Invocation
+from zombuild._context import context_arguments
+from zombuild._context import context_config
+from zombuild._context import context_invocation
+from zombuild._context import context_project
 from zombuild._exception import ZombuildException
 from zombuild.config.include import BuildConfig
 from zombuild.tasks import FilesTask
@@ -41,26 +44,24 @@ class BuildTask(FilesTask):
     def __init__(
         self,
         *,
-        invocation: Invocation,
         name: str,
         output_path: Path,
         **extra,
     ) -> None:
         super().__init__(
-            invocation=invocation,
             name=name,
-            srcroot=invocation.project_dir,
+            srcroot=context_project(),
             dstroot=Path(output_path).expanduser().resolve(),
         )
 
         self.target = Path(output_path).expanduser().resolve()
 
-        invocation.lifecycle_task("build").depends_on(self)
+        context_invocation().lifecycle_task("build").depends_on(self)
 
     def _actions(self, config: Sequence[BuildConfig], prefix: Path):
         for include in config:
             action = include.action
-            provider = self.invocation.get_feature(match_actionfeature(action))
+            provider = self.invocation.get(match_actionfeature(action))
             if provider is None:
                 raise ZombuildException(
                     f"no build action provider for action: {action}"
@@ -70,13 +71,13 @@ class BuildTask(FilesTask):
     def _package(self):
         self.plan.touch(".zombuilt")
         self.plan.file("assets/preview.png", "preview.png")
-        for mod_id in self._invocation.config.mods:
+        for mod_id in context_config(True).mods:
             self._mod(
                 mod_id=mod_id,
             )
 
     def _mod(self, mod_id: str) -> None:
-        mod = self.config.mods[mod_id]
+        mod = context_config().mods[mod_id]
 
         self.plan.touch(f"Contents/mods/{mod_id}/common/.nodelete")
 
@@ -101,7 +102,7 @@ class BuildTask(FilesTask):
             if version != "common":
                 self.plan.file(
                     src=lambda dst: dst.write_text(
-                        generate_modinfo(self.config, mod_id)
+                        generate_modinfo(context_config(), mod_id)
                     ),
                     dst=f"Contents/mods/{mod_id}/{version}/mod.info",
                 )
@@ -117,6 +118,6 @@ class BuildTask(FilesTask):
 
     def execute(self) -> None:
         self._package()
-        if self.arguments.symlink:
+        if context_arguments().symlink:
             self.plan.mode = "link"
         return super().execute()

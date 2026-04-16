@@ -19,9 +19,11 @@
 
 from .__main__ import main as main
 from ._arguments import ZombuildArguments
+from ._context import ZombuildContext
+from ._context import context
 from ._invocation import Invocation as Invocation
 from ._invocation import Tasks as Tasks
 from ._invocation import Theme as Theme
 from ._invocation_base import InvocationBase as InvocationBase
-from ._invocation_plugins import InvocationPlugins as InvocationPlugins
 from ._package import resolve_package as resolve_package
+

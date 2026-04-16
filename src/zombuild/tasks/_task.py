@@ -16,58 +16,33 @@
 
 from abc import ABC
 from abc import abstractmethod
-from dataclasses import dataclass
-from typing import TYPE_CHECKING
 from typing import Iterable
 
-from zombuild.setup_mixin import SetupMixin
-from zombuild.tasks._filter import TaskPredicate
-
-if TYPE_CHECKING:
-    pass
+from zombuild.composite.component import Composite
+from zombuild.functional_helpers import Predicate
 
 
-@dataclass(frozen=True)
-class TaskSpecifier(ABC):
-    name: str
-
-
-@dataclass(frozen=True)
-class ActionableTaskSpecifier(TaskSpecifier):
-    prototype: str
-
-    def __str__(self) -> str:
-        return f"{self.prototype}.{self.name}"
-
-
-@dataclass(frozen=True)
-class LifecycleTaskSpecifier(TaskSpecifier):
-    @property
-    def group(self):
-        return "@"
-
-    def __str__(self) -> str:
-        return f"@{self.name}"
-
-
-class ZombuildTask(ABC, SetupMixin):
+class ZombuildTask(Composite, ABC):
     @property
     @abstractmethod
-    def specifier(self) -> TaskSpecifier: ...
+    def name(self) -> str:
+        raise NotImplementedError()
 
     @abstractmethod
     def get_dependencies(
         self,
         tasks: Iterable[ZombuildTask],
         include_optional: bool = False,
-    ) -> set[ZombuildTask]: ...
+    ) -> set[ZombuildTask]:
+        raise NotImplementedError()
 
     @abstractmethod
     def depends_on(
         self,
-        other: TaskPredicate | ZombuildTask,
+        other: Predicate[ZombuildTask] | ZombuildTask,
         optional: bool = False,
     ): ...
 
     @abstractmethod
-    def execute(self) -> None: ...
+    def execute(self) -> None:
+        raise NotImplementedError()

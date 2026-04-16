@@ -14,32 +14,34 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+from dataclasses import replace
+from importlib.metadata import entry_points
 from pathlib import Path
 from typing import Sequence
-from typing import override
+from warnings import deprecated
 
-from zombuild.features import FeatureAccessors
-from zombuild.features import Features
+from zombuild._context import ZombuildContext
+from zombuild._context import context
+from zombuild.composite.component import Component
+from zombuild.composite.component import DerivedComponents
+from zombuild.composite.component_accessors import ComponentAccessorsMixin
+from zombuild.composite.hooks import execute_hook
+from zombuild.setup_hook import SetupHook
 
 from ._arguments import ZombuildArguments
+from ._create_task import create_task
 from ._exception import ZombuildException
 from ._exception import unhandled_exception_reporter
 from ._invocation_base import InvocationBase
-from ._invocation_plugins import InvocationPlugins
+from ._invocation_plugins import Plugins
 from ._package import resolve_package
-from .config.package import PackageConfig
 from .config.task import TaskConfig
 from .console import Console
 from .console import Indent
 from .console import Text
-from .setup_mixin import execute_setup
-from .tasks import ActionableTaskSpecifier
-from .tasks import FuzzyTaskPredicate
-from .tasks import TaskNameFilter
-from .tasks import TaskPredicate
 from .tasks import ZombuildTask
+from .tasks._default import ActionableTask
 from .tasks._default import LifecycleTask
-from .tasks._task import LifecycleTaskSpecifier
 from .theme import Theme
 
 
@@ -53,56 +55,16 @@ class Tasks:
     def tasks(self):
         return self._tasks
 
-    def resolve_task(
-        self, filter: str | TaskPredicate, fuzzy=False
-    ) -> set[ZombuildTask]:
-        """
-        Gets the set of tasks matched by the fiter.
+    def resolve_task(self, name: str) -> set[ZombuildTask]:
+        return set(each for each in self._tasks if each.name == name)
 
-        Args:
-            filter: name or predicate
-            fuzzy: Enable fuzzy matching.
-                Allows strings to match tasks whose names contain their characters in
-                order, ignoring extra intervening characters. Defaults to False.
-
-        Returns:
-            set of matched tasks
-        """
-
-        fuzzy_predicate: TaskPredicate | None = None
-
-        if isinstance(filter, str):
-            if fuzzy:
-                fuzzy_predicate = FuzzyTaskPredicate(filter)
-            filter = TaskNameFilter(task_name=filter)
-
-        matched: set[ZombuildTask] = set()
-        matched_fuzzy: set[ZombuildTask] = set()
-
-        for task in self._tasks:
-            if filter.test(task.specifier):
-                matched.add(task)
-            if fuzzy_predicate is None or fuzzy_predicate.test(task.specifier):
-                matched_fuzzy.add(task)
-
-        if len(matched) > 0:
-            return matched
-        elif len(matched_fuzzy) > 0:
-            return matched_fuzzy
-        else:
-            return matched
-
-    def require_task(self, filter: str | ZombuildTask, fuzzy=False) -> ZombuildTask:
+    def require_task(self, filter: str | ZombuildTask) -> ZombuildTask:
         """
         Variant of resolve_task that raises an exception if the filter does not resolve
         to one and only one task.
 
         Args:
             filter: name or predicate
-            fuzzy: Enable fuzzy matching.
-
-                Allows strings to match tasks whose names contain their characters in
-                order, ignoring extra intervening characters. Defaults to False.
 
         Raises:
             ZombuildException: when no task is found
@@ -113,7 +75,7 @@ class Tasks:
         """
 
         if isinstance(filter, str):
-            resolved = self.resolve_task(filter, fuzzy=fuzzy)
+            resolved = self.resolve_task(filter)
             if not resolved:
                 raise ZombuildException(f"no such task: {filter}")
             if len(resolved) > 1:
@@ -138,7 +100,7 @@ class Tasks:
 
         if name in self._lifecycle:
             return self._lifecycle[name]
-        task = LifecycleTask(invocation=self._invocation, name=name)
+        task = LifecycleTask(name=name)
         self._lifecycle[name] = task
         self._tasks.append(task)
         return task
@@ -166,7 +128,8 @@ class Tasks:
 
         [plugin_name, prototype_name] = prototype.split(".", 1)
 
-        task = self._invocation.plugins.create_task(
+        task = create_task(
+            self._invocation.plugins,
             plugin_name=plugin_name,
             prototype_name=prototype_name,
             task_name=name,
@@ -204,23 +167,20 @@ class Tasks:
             set of named tasks and their dependencies
         """
 
-    def collect_tasks(
-        self, tasks: Sequence[str | ZombuildTask], fuzzy=False
-    ) -> set[ZombuildTask]:
+    def collect_tasks(self, tasks: Sequence[str | ZombuildTask]) -> set[ZombuildTask]:
         """
         collects all named tasks and their dependencies
 
         Args:
             tasks: list of tasks or task names. Names will be resolved to tasks via
                 :func:`~require_task`
-            fuzzy: see :func:`~require_task`
 
         Returns:
             _description_
         """
 
         def resolve(name: str | ZombuildTask):
-            return self.require_task(name, fuzzy=fuzzy)
+            return self.require_task(name)
 
         queue = set(map(resolve, tasks))
         seen = set(queue)
@@ -235,14 +195,13 @@ class Tasks:
                     seen.add(other)
         return seen
 
-    def solve_tasks(self, tasks: Sequence[str], fuzzy=False) -> list[ZombuildTask]:
+    def solve_tasks(self, tasks: Sequence[str]) -> list[ZombuildTask]:
         """
         Solves a list of task names from the command line, producing a list of those
         tasks and their dependencies in an appropriate execution order.
 
         Args:
             tasks: list of task names to resolve via :func:`~require_task`
-            fuzzy: see :func:`~require_task`
 
         Raises:
             ZombuildException: if the task dependency graph is cyclic
@@ -251,7 +210,7 @@ class Tasks:
             list of named tasks and their dependencies in execution order
         """
 
-        unsorted = list(self.collect_tasks(tasks, fuzzy=fuzzy))
+        unsorted = list(self.collect_tasks(tasks))
         order: list[ZombuildTask] = []
 
         while len(unsorted) > 0:
@@ -273,54 +232,68 @@ class Tasks:
             tasks: task names
         """
 
-        order = self.solve_tasks(tasks, fuzzy=True)
+        order = self.solve_tasks(tasks)
         for task in order:
             self.execute_task(task)
 
     def execute_task(self, task: ZombuildTask):
         if not isinstance(task, LifecycleTask):
-            self._invocation.console.print(
+            print(
                 Text("running task:", Theme.HEADING),
-                Text(task.specifier.name, Theme.KEYWORD),
+                Text(task.name, Theme.KEYWORD),
             )
         task.execute()
 
 
-class Invocation(Tasks, InvocationBase, FeatureAccessors, Features):
+class Invocation(Tasks, InvocationBase, ComponentAccessorsMixin):
     """
     Represents an invocation of the build tool.
     """
 
-    def __init__(
-        self, arguments: ZombuildArguments, project: Path | PackageConfig
-    ) -> None:
+    def __init__(self, arguments: ZombuildArguments, project: Path) -> None:
+
+        nascent_context = ZombuildContext(
+            invocation=self,
+            arguments=arguments,
+            project=project,
+            features=self,
+        )
+
+        context.set(nascent_context)
+
         try:
-            project = resolve_package(project)
-            self._project_dir = project.source.parent
+            self._config = resolve_package(project)
+            context.set(replace(nascent_context, config=self._config))
+
+            self._project_dir = self._config.source.parent
             self._arguments = arguments
             self._console = Console()
-            self._config = project
-            self._loader = InvocationPlugins(self)
+            self._loader = Plugins()
             Tasks.__init__(self, self)
         except Exception as e:
             unhandled_exception_reporter(e)
 
+    def __derive(self):
+        v: set[Component] = set()
+        v |= set(x for p in self.plugins.plugins for x in p.components)
+        v |= set(x for p in self.tasks for x in p.components)
+        return v
+
+    components = DerivedComponents(__derive)
+
     @property
+    @deprecated("use context module")
     def arguments(self) -> ZombuildArguments:
         return self._arguments
 
     @property
+    @deprecated("use context module")
     def console(self):
         return self._console
 
     @property
-    def plugins(self) -> InvocationPlugins:
+    def plugins(self) -> Plugins:
         return self._loader
-
-    @property
-    @override
-    def features(self):
-        return self.plugins.features
 
     @property
     def config(self):
@@ -331,62 +304,67 @@ class Invocation(Tasks, InvocationBase, FeatureAccessors, Features):
         return self._project_dir
 
     def execute_setup(self):
-        self.plugins.load_plugins()
-        self.plugins.setup_plugins()
+        self.plugins.load()
         self.load_tasks()
-        execute_setup(self._tasks, self)
+        execute_hook(SetupHook, self._tasks)
 
     def execute_run(self):
-        self.execute_tasks(self.arguments.tasks)
+        self.execute_tasks(self.arguments.tasks)  # type: ignore
 
     def execute_list(self):
-        c = self.console
 
-        c.print()
-        c.print(Text("Supertasks:", Theme.HEADING))
+        print()
+        print(Text("Supertasks:", Theme.HEADING))
 
         for task in self._tasks:
-            specifier = task.specifier
-            if isinstance(specifier, LifecycleTaskSpecifier):
-                txt_name = Text(specifier.name, Theme.KEYWORD)
+            if isinstance(task, LifecycleTask):
+                txt_name = Text(task.name, Theme.KEYWORD)
 
-                c.print(
+                print(
                     Indent(
                         txt_name,
                         2,
                     )
                 )
 
-        c.print()
-        c.print(Text("Tasks:", Theme.HEADING))
+        print()
+        print(Text("Tasks:", Theme.HEADING))
 
         for task in self._tasks:
-            specifier = task.specifier
-            if isinstance(specifier, ActionableTaskSpecifier):
-                txt_type = Text(specifier.prototype)
-                txt_name = Text(specifier.name, Theme.KEYWORD)
+            if isinstance(task, ActionableTask):
+                txt_name = Text(task.name, Theme.KEYWORD)
 
-                c.print(
+                print(
                     Indent(
-                        Text.assemble(txt_name, " (", txt_type, ")"),
+                        txt_name,
                         2,
                     )
                 )
 
-        if self.arguments.list_types:
-            c.print()
-            c.print(Text("Task Types:", Theme.HEADING))
+        if self._arguments.list_types:
+            print()
+            print(Text("Task Types:", Theme.HEADING))
             for plugin in self.plugins.plugins:
                 for factory in plugin.tasks:
                     t = Text()
                     t.append(plugin.id)
                     t.append(".")
                     t.append(factory)
-                    c.print(Indent(t, 2))
+                    print(Indent(t, 2))
+
+        if self._arguments.list_plugins:
+            print()
+            print(Text("Available Plugins:", Theme.HEADING))
+            for plugin in entry_points(group="zombuild_plugins"):
+                t = Text()
+                t.append(plugin.name)
+                if plugin.dist is not None:
+                    t.append(f" (from {plugin.dist.name})")
+                print(Indent(t, 2))
 
     def execute(self):
         try:
-            command = self.arguments.command
+            command = self._arguments.command
 
             self.execute_setup()
 

@@ -17,15 +17,12 @@
 import os
 from pathlib import Path
 from pathlib import PurePath
-from typing import TYPE_CHECKING
 from typing import Literal
 from typing import overload
 
+from zombuild._context import context_arguments
 from zombuild.fs import Plan
 from zombuild.tasks._default import ActionableTask
-
-if TYPE_CHECKING:
-    from zombuild import Invocation
 
 
 @overload
@@ -59,7 +56,6 @@ class FilesTask(ActionableTask):
     def __init__(
         self,
         *,
-        invocation: Invocation,
         name: str,
         mode: Literal["copy", "link"] = "copy",
         srcroot: Path,
@@ -67,7 +63,6 @@ class FilesTask(ActionableTask):
     ) -> None:
         super().__init__(
             name=name,
-            invocation=invocation,
         )
 
         self.mode = mode
@@ -107,5 +102,5 @@ class FilesTask(ActionableTask):
                 path=path,
                 source=source,
             ),
-            perform_operations=not self.invocation.arguments.dry_run,
+            perform_operations=not context_arguments().dry_run,
         )

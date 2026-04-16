@@ -16,8 +16,9 @@
 
 from pathlib import Path
 
-from zombuild import Invocation
 from zombuild import fs
+from zombuild._context import context_arguments
+from zombuild._context import context_invocation
 from zombuild.tasks import ActionableTask
 
 
@@ -25,22 +26,20 @@ class InstallTask(ActionableTask):
     def __init__(
         self,
         *,
-        invocation: Invocation,
         output_path: Path,
         name: str,
         **extra,
     ) -> None:
         super().__init__(
-            invocation=invocation,
             name=name,
         )
         self.output_path = output_path
 
-        invocation.lifecycle_task("install").depends_on(self)
+        context_invocation().lifecycle_task("install").depends_on(self)
 
     def execute(self) -> None:
         workshop_path = fs.expand(
-            self.invocation.arguments.workshop,
+            context_arguments().workshop,
             self.invocation.project_dir,
         )
 
@@ -75,20 +74,18 @@ class UninstallTask(ActionableTask):
     def __init__(
         self,
         *,
-        invocation: Invocation,
         output_path: Path,
         name: str,
         **extra,
     ) -> None:
         super().__init__(
-            invocation=invocation,
             name=name,
         )
         self.output_path = output_path
 
     def execute(self) -> None:
         workshop_path = fs.expand(
-            self.invocation.arguments.workshop,
+            context_arguments().workshop,
             self.invocation.project_dir,
         )
 

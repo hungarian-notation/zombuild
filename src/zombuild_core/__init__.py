@@ -14,12 +14,12 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import zombuild
-import zombuild.plugins
 from zombuild import Invocation
 from zombuild import fs
-from zombuild.features import DefaultTaskFeature
+from zombuild._context import context_config
+from zombuild._context import context_invocation
 from zombuild.plugins import ZombuildPlugin
+from zombuild.setup_hook import SetupHook
 from zombuild_core.action_provider import ActionProviderFeature
 from zombuild_core.InstallTask import InstallTask
 from zombuild_core.InstallTask import UninstallTask
@@ -41,21 +41,18 @@ class CorePlugin(ZombuildPlugin):
     INSTALL_TASK = "install-mod"
     UNINSTALL_TASK = "uninstall-mod"
 
-    def __init__(self, invocation: Invocation, **kwargs) -> None:
-        self.target = kwargs.get("target", invocation.config.output)
+    def __init__(self, **kwargs) -> None:
 
-        super().__init__(
-            target=self.target,
-        )
+        self.target = kwargs.get("target", context_config().output)
+        super().__init__()
 
         self.register_task(BuildTask)
         self.register_task(CleanTask)
         self.register_task(InstallTask)
         self.register_task(UninstallTask)
 
-        self.add_feature(DefaultTaskFeature(self.create_defaults, self.wire_defaults))
-
-        self.add_feature(
+        self.add(SetupHook(self.create_defaults, self.wire_defaults))
+        self.add(
             ActionProviderFeature(
                 self,
                 "default",
@@ -63,14 +60,14 @@ class CorePlugin(ZombuildPlugin):
             )
         )
 
-        self.add_feature(
+        self.add(
             ActionProviderFeature(
                 self,
                 "json-merge",
                 jsonmerge_action,
             )
         )
-        self.add_feature(
+        self.add(
             ActionProviderFeature(
                 self,
                 "translations",
@@ -78,15 +75,16 @@ class CorePlugin(ZombuildPlugin):
             )
         )
 
-    def wire_defaults(self, invocation: Invocation):
+    def wire_defaults(self):
         self.task_build.depends_on(self.task_clean, optional=True)
         self.task_install.depends_on(self.task_build)
         self.task_clean.depends_on(self.task_uninstall)
 
-    def create_defaults(self, invocation: Invocation) -> None:
+    def create_defaults(self) -> None:
+        invocation = context_invocation()
+
         self.task_clean = invocation.register_task(
             CleanTask(
-                invocation=invocation,
                 name=self.CLEAN_TASK,
                 output_path=output_path(invocation),
             )
@@ -94,7 +92,6 @@ class CorePlugin(ZombuildPlugin):
 
         self.task_build = invocation.register_task(
             BuildTask(
-                invocation=invocation,
                 name=self.BUILD_TASK,
                 output_path=output_path(invocation),
             )
@@ -102,7 +99,6 @@ class CorePlugin(ZombuildPlugin):
 
         self.task_install = invocation.register_task(
             InstallTask(
-                invocation=invocation,
                 name=self.INSTALL_TASK,
                 output_path=output_path(invocation),
             )
@@ -110,19 +106,7 @@ class CorePlugin(ZombuildPlugin):
 
         self.task_uninstall = invocation.register_task(
             UninstallTask(
-                invocation=invocation,
                 name=self.UNINSTALL_TASK,
                 output_path=output_path(invocation),
             )
         )
-
-
-@zombuild.plugins.plugin()
-def plugin(invocation: Invocation, **kwargs):
-
-    plugin = CorePlugin(
-        invocation=invocation,
-        target=kwargs.get("target", invocation.config.output),
-    )
-
-    return plugin

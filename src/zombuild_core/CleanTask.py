@@ -16,25 +16,23 @@
 
 from pathlib import Path
 
-from zombuild import Invocation
+from zombuild._context import context_invocation
 from zombuild.tasks import ActionableTask
 
 
 class CleanTask(ActionableTask):
     def __init__(
         self,
-        invocation: Invocation,
         name: str,
         output_path: Path,
         **extra,
     ) -> None:
         super().__init__(
-            invocation=invocation,
             name=name,
         )
         self.output_path = Path(output_path).expanduser().resolve()
 
-        invocation.lifecycle_task("clean").depends_on(self)
+        context_invocation().lifecycle_task("clean").depends_on(self)
 
     def execute(self) -> None:
         if self.output_path.exists():

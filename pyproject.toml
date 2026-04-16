@@ -1,6 +1,6 @@
 [project]
 name = "zombuild"
-version = "0.1.4a0"
+version = "0.1.4a3"
 description = "modula build system for project zomboid"
 authors = [{ name = "Chris Bode" }]
 license = "AGPL-3.0-or-later"
@@ -18,13 +18,15 @@ core = "zombuild_core:CorePlugin"
 requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
 
+[tool.pyright]
+reportDeprecated = "warning"
+
 [tool.poetry]
 packages = [
     { from = "src", include = "zombuild" },
     { from = "src", include = "zombuild_core" },
     { from = "src", include = "zombuild_codegen" },
 ]
-
 
 [tool.ruff]
 
