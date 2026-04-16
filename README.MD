@@ -1,5 +1,9 @@
 # Zombuild
 
+I am actively developing this tool alongside my [Sound Radar](https://github.com/hungarian-notation/pz-hfsound) mod. It is not ready for use by third parties.
+
+## About
+
 Simple build tools for Project Zomboid mods.
 
 Configured by a `zombuild.json` file in your project root.
