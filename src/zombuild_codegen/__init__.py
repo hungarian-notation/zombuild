@@ -17,8 +17,6 @@
 from pydantic import BaseModel
 from pydantic import ValidationError
 
-import zombuild
-import zombuild.plugins
 from zombuild import Invocation
 from zombuild import fs
 from zombuild._exception import ZombuildConfigException
@@ -138,10 +136,3 @@ class CodeGenPlugin(ZombuildPlugin):
         super().__init__(**kwargs)
         self.register_task(EnumsTask)
 
-
-@zombuild.plugins.plugin()
-def plugin(invocation: Invocation, **kwargs):
-
-    plugin = CodeGenPlugin(invocation=invocation)
-
-    return plugin

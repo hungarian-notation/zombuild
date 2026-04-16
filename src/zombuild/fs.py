@@ -29,7 +29,6 @@ from zombuild._exception import ZombuildException
 
 _PathLike = str | PurePath | Path
 
-
 @overload
 def normalize(path: Path | PurePath) -> Path: ...
 

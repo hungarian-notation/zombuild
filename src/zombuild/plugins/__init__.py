@@ -14,8 +14,6 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from ._decorator import PluginFactory as PluginFactory
-from ._decorator import plugin as plugin
 from ._plugin import ZombuildPlugin as ZombuildPlugin
 from .features import PluginFeature as PluginFeature
 from .features import PluginOptionsFeature as PluginOptionsFeature

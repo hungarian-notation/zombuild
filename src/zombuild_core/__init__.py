@@ -14,8 +14,6 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import zombuild
-import zombuild.plugins
 from zombuild import Invocation
 from zombuild import fs
 from zombuild.features import DefaultTaskFeature
@@ -116,13 +114,3 @@ class CorePlugin(ZombuildPlugin):
             )
         )
 
-
-@zombuild.plugins.plugin()
-def plugin(invocation: Invocation, **kwargs):
-
-    plugin = CorePlugin(
-        invocation=invocation,
-        target=kwargs.get("target", invocation.config.output),
-    )
-
-    return plugin

@@ -6,6 +6,7 @@ from typing import Any
 from typing import Callable
 from typing import Sequence
 from typing import TypeGuard
+from typing import TypeIs
 from typing import overload
 from typing import override
 
@@ -31,8 +32,8 @@ class Features(ABC):
     def features(self) -> list[Feature]: ...
 
 
-def typeguard[T](guard: type[T]) -> Callable[[Any], TypeGuard[T]]:
-    def closure(value: Any) -> TypeGuard[T]:
+def typeguard[T](guard: type[T]) -> Callable[[Any], TypeIs[T]]:
+    def closure(value: Any) -> TypeIs[T]:
         return isinstance(value, guard)
 
     return closure
@@ -44,7 +45,7 @@ class FeatureAccessors(Features):
 
     @overload
     def get_feature[T: Feature](
-        self, typeguard: Callable[[Feature], TypeGuard[T]], /
+        self, typeguard: Callable[[Feature], TypeIs[T]], /
     ) -> T | None: ...
 
     @overload

@@ -36,7 +36,7 @@ def find_plugin(name):
         if plugin.name == name:
             loaded = plugin.load()
             if isinstance(loaded, type) and issubclass(loaded, ZombuildPlugin):
-                return loaded
+                return loaded, plugin
             else:
                 raise Exception(
                     f"expected plugin entry point {plugin} "
@@ -46,7 +46,7 @@ def find_plugin(name):
         raise Exception(f"no such plugin: {name}")
 
 
-class InvocationPlugins(FeatureAccessors):
+class Plugins(FeatureAccessors):
     def __init__(self, invocation: Invocation) -> None:
         self._plugins: dict[str, ZombuildPlugin] = dict()
         self._invocation = invocation
@@ -64,18 +64,23 @@ class InvocationPlugins(FeatureAccessors):
     def features(self):
         return [feature for plugin in self.plugins for feature in plugin.features]
 
-    def load_plugins(self):
+    def load(self):
         for plugin in self.package.plugins:
             config = PluginConfig.convert(plugin)
-
-            factory = find_plugin(config.plugin)
+            factory, entrypoint = find_plugin(config.plugin)
             plugin = factory(
                 invocation=self._invocation,
                 **(config.model_extra or {}),
             )
+            print(f"loaded {entrypoint}")
+
+            plugin.id = entrypoint.name
+            plugin.group = entrypoint.group
             self._plugins[plugin.id] = plugin
 
-    def setup_plugins(self):
+        self.__setup()
+
+    def __setup(self):
         features = [feature for plugin in self.plugins for feature in plugin.features]
         execute_setup(features, self._invocation)
 

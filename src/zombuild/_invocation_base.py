@@ -23,7 +23,7 @@ if TYPE_CHECKING:
 
     from zombuild._arguments import ZombuildArguments
 
-    from ._invocation_plugins import InvocationPlugins
+    from ._invocation_plugins import Plugins
     from .config.package import PackageConfig
     from .console import Console
 
@@ -49,7 +49,7 @@ class InvocationBase(ABC):
 
     @property
     @abstractmethod
-    def plugins(self) -> InvocationPlugins: ...
+    def plugins(self) -> Plugins: ...
 
     # LOGGING
 

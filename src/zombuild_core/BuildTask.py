@@ -17,7 +17,7 @@
 from pathlib import Path
 from typing import Any
 from typing import Sequence
-from typing import TypeGuard
+from typing import TypeIs
 
 from zombuild import Invocation
 from zombuild._exception import ZombuildException
@@ -29,7 +29,7 @@ from ._modinfo import generate_modinfo
 
 
 def match_actionfeature(name: str):
-    def predicate(feature: Any) -> TypeGuard[ActionProviderFeature]:
+    def predicate(feature: Any) -> TypeIs[ActionProviderFeature]:
         if isinstance(feature, ActionProviderFeature):
             return feature.name == name
         return False
@@ -58,6 +58,10 @@ class BuildTask(FilesTask):
         invocation.lifecycle_task("build").depends_on(self)
 
     def _actions(self, config: Sequence[BuildConfig], prefix: Path):
+        if self.invocation.arguments.verbose > 1:
+            for action in self.invocation.get_features(ActionProviderFeature):
+                print(f"action {action.name}: {action}")
+
         for include in config:
             action = include.action
             provider = self.invocation.get_feature(match_actionfeature(action))
