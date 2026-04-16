@@ -23,7 +23,6 @@ from zombuild.plugins._plugin import ZombuildPlugin
 from zombuild.plugins.features import PluginFeature
 
 if TYPE_CHECKING:
-
     from zombuild.config.include import BuildConfig
     from zombuild_core import BuildTask
 

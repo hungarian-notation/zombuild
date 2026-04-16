@@ -113,4 +113,3 @@ class CorePlugin(ZombuildPlugin):
                 output_path=output_path(invocation),
             )
         )
-
