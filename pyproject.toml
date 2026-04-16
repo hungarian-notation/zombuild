@@ -1,6 +1,6 @@
 [project]
 name = "zombuild"
-version = "0.1.2"
+version = "0.1.4a0"
 description = "modula build system for project zomboid"
 authors = [{ name = "Chris Bode" }]
 license = "AGPL-3.0-or-later"
@@ -10,6 +10,9 @@ dependencies = ["pydantic (>=2.12.5,<3.0.0)", "colorama (>=0.4.6,<0.5.0)"]
 
 scripts = { zombuild = "zombuild:main" }
 
+[project.entry-points.zombuild_plugins]
+codegen = "zombuild_codegen:CodeGenPlugin"
+core = "zombuild_core:CorePlugin"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
@@ -17,9 +20,9 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 packages = [
-    { include = "zombuild" },
-    { include = "zombuild_core" },
-    { include = "zombuild_codegen" },
+    { from = "src", include = "zombuild" },
+    { from = "src", include = "zombuild_core" },
+    { from = "src", include = "zombuild_codegen" },
 ]
 
 

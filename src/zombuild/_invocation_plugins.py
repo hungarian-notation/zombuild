@@ -14,6 +14,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+from importlib.metadata import entry_points
 from typing import TYPE_CHECKING
 from typing import Callable
 from typing import override
@@ -28,6 +29,21 @@ from zombuild.tasks import ZombuildTask
 
 if TYPE_CHECKING:
     from ._invocation import Invocation
+
+
+def find_plugin(name):
+    for plugin in entry_points(group="zombuild_plugins"):
+        if plugin.name == name:
+            loaded = plugin.load()
+            if isinstance(loaded, type) and issubclass(loaded, ZombuildPlugin):
+                return loaded
+            else:
+                raise Exception(
+                    f"expected plugin entry point {plugin} "
+                    f"to refer to a subclass of ZombuildPlugin"
+                )
+    else:
+        raise Exception(f"no such plugin: {name}")
 
 
 class InvocationPlugins(FeatureAccessors):
@@ -51,7 +67,8 @@ class InvocationPlugins(FeatureAccessors):
     def load_plugins(self):
         for plugin in self.package.plugins:
             config = PluginConfig.convert(plugin)
-            factory = ZombuildPlugin.load(config.plugin)
+
+            factory = find_plugin(config.plugin)
             plugin = factory(
                 invocation=self._invocation,
                 **(config.model_extra or {}),
