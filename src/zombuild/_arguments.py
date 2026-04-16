@@ -46,7 +46,6 @@ class ZombuildArguments(pydantic.BaseModel):
     tasks: list[str] = Field(default_factory=list)
 
     list_types: bool = False
-
+    list_plugins: bool = False
     dry_run: bool = False
-
     symlink: bool = True

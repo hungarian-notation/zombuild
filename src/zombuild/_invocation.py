@@ -14,6 +14,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+from importlib.metadata import entry_points
 from pathlib import Path
 from typing import Sequence
 from typing import override
@@ -25,7 +26,7 @@ from ._arguments import ZombuildArguments
 from ._exception import ZombuildException
 from ._exception import unhandled_exception_reporter
 from ._invocation_base import InvocationBase
-from ._invocation_plugins import InvocationPlugins
+from ._invocation_plugins import Plugins
 from ._package import resolve_package
 from .config.package import PackageConfig
 from .config.task import TaskConfig
@@ -33,13 +34,12 @@ from .console import Console
 from .console import Indent
 from .console import Text
 from .setup_mixin import execute_setup
-from .tasks import ActionableTaskSpecifier
 from .tasks import FuzzyTaskPredicate
 from .tasks import TaskNameFilter
 from .tasks import TaskPredicate
 from .tasks import ZombuildTask
+from .tasks._default import ActionableTask
 from .tasks._default import LifecycleTask
-from .tasks._task import LifecycleTaskSpecifier
 from .theme import Theme
 
 
@@ -300,7 +300,7 @@ class Invocation(Tasks, InvocationBase, FeatureAccessors, Features):
             self._arguments = arguments
             self._console = Console()
             self._config = project
-            self._loader = InvocationPlugins(self)
+            self._loader = Plugins(self)
             Tasks.__init__(self, self)
         except Exception as e:
             unhandled_exception_reporter(e)
@@ -314,7 +314,7 @@ class Invocation(Tasks, InvocationBase, FeatureAccessors, Features):
         return self._console
 
     @property
-    def plugins(self) -> InvocationPlugins:
+    def plugins(self) -> Plugins:
         return self._loader
 
     @property
@@ -331,8 +331,7 @@ class Invocation(Tasks, InvocationBase, FeatureAccessors, Features):
         return self._project_dir
 
     def execute_setup(self):
-        self.plugins.load_plugins()
-        self.plugins.setup_plugins()
+        self.plugins.load()
         self.load_tasks()
         execute_setup(self._tasks, self)
 
@@ -340,49 +339,55 @@ class Invocation(Tasks, InvocationBase, FeatureAccessors, Features):
         self.execute_tasks(self.arguments.tasks)
 
     def execute_list(self):
-        c = self.console
 
-        c.print()
-        c.print(Text("Supertasks:", Theme.HEADING))
+        print()
+        print(Text("Supertasks:", Theme.HEADING))
 
         for task in self._tasks:
-            specifier = task.specifier
-            if isinstance(specifier, LifecycleTaskSpecifier):
-                txt_name = Text(specifier.name, Theme.KEYWORD)
+            if isinstance(task, LifecycleTask):
+                txt_name = Text(str(task.specifier.name), Theme.KEYWORD)
 
-                c.print(
+                print(
                     Indent(
                         txt_name,
                         2,
                     )
                 )
 
-        c.print()
-        c.print(Text("Tasks:", Theme.HEADING))
+        print()
+        print(Text("Tasks:", Theme.HEADING))
 
         for task in self._tasks:
-            specifier = task.specifier
-            if isinstance(specifier, ActionableTaskSpecifier):
-                txt_type = Text(specifier.prototype)
-                txt_name = Text(specifier.name, Theme.KEYWORD)
+            if isinstance(task, ActionableTask):
+                txt_name = Text(str(task.specifier.name), Theme.KEYWORD)
 
-                c.print(
+                print(
                     Indent(
-                        Text.assemble(txt_name, " (", txt_type, ")"),
+                        txt_name,
                         2,
                     )
                 )
 
-        if self.arguments.list_types:
-            c.print()
-            c.print(Text("Task Types:", Theme.HEADING))
+        if self._arguments.list_types:
+            print()
+            print(Text("Task Types:", Theme.HEADING))
             for plugin in self.plugins.plugins:
                 for factory in plugin.tasks:
                     t = Text()
                     t.append(plugin.id)
                     t.append(".")
                     t.append(factory)
-                    c.print(Indent(t, 2))
+                    print(Indent(t, 2))
+
+        if self._arguments.list_plugins:
+            print()
+            print(Text("Available Plugins:", Theme.HEADING))
+            for plugin in entry_points(group="zombuild_plugins"):
+                t = Text()
+                t.append(plugin.name)
+                if plugin.dist is not None:
+                    t.append(f" (from {plugin.dist.name})")
+                print(Indent(t, 2))
 
     def execute(self):
         try:

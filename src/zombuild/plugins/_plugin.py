@@ -14,12 +14,10 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import inspect
 from typing import TYPE_CHECKING
 from typing import Any
 from typing import override
 
-from zombuild._exception import ZombuildException
 from zombuild.features import Feature
 from zombuild.features import FeatureAccessors
 from zombuild.features import Features
@@ -40,20 +38,8 @@ class ZombuildPlugin(FeatureAccessors, Features):
 
     def __init__(self, *, id: str | None = None, **kwargs) -> None:
         self._features: list[Feature] = []
-
-        if id is None:
-            module = inspect.getmodule(self.__class__)
-            package = module.__package__ if module else None
-            if package is not None:
-                id = package
-                if id.startswith("zombuild_"):
-                    id = id.removeprefix("zombuild_")
-
-        if id is None:
-            raise ZombuildException(f"could not infer plugin id: {self}")
-
-        self._id = id
-
+        self._id: str | None = None
+        self._group: str | None = None
         if kwargs:
             self.add_feature(PluginOptionsFeature(self, kwargs))
 
@@ -64,7 +50,27 @@ class ZombuildPlugin(FeatureAccessors, Features):
 
     @property
     def id(self):
+        if self._id is None:
+            raise ValueError(f"id not set on {self}")
         return self._id
+
+    @id.setter
+    def id(self, id: str):
+        if self._id is not None:
+            raise ValueError(f"id was already set on {self}")
+        self._id = id
+
+    @property
+    def group(self):
+        if self._group is None:
+            raise ValueError(f"group not set on {self}")
+        return self._group
+
+    @group.setter
+    def group(self, group: str):
+        if self._group is not None:
+            raise ValueError(f"group was already set on {self}")
+        self._group = group
 
     @property
     def options(self) -> dict[str, Any]:

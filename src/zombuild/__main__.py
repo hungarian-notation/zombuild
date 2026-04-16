@@ -19,7 +19,6 @@ from argparse import Action
 from argparse import ArgumentError
 from argparse import ArgumentParser
 from argparse import Namespace
-from argparse import _ActionsContainer
 from argparse import _SubParsersAction
 from pathlib import Path
 from typing import Any
@@ -53,24 +52,30 @@ class DefineAction(Action):
 
 
 
+
 def main():
     colorama.just_fix_windows_console()
 
     #############################
 
+    common_parser = ArgumentParser(add_help=False)
+
+    group = common_parser.add_argument_group("global options")
+    group.add_argument("-D", "--define", action=DefineAction)
+    group.add_argument("-v", "--verbose", action="count", default=0)
+
     parser = ArgumentParser(
         prog="zombuild",
         description="build tool for project zomboid mods",
+        parents=[common_parser],
     )
-
-    _set_universal(parser)
 
     parser.add_argument("-p", "--project", action="store", default=".")
 
     subparsers = parser.add_subparsers(title="command")
 
-    _define_run(subparsers)
-    _define_list(subparsers)
+    _define_run(subparsers, common_parser)
+    _define_list(subparsers, common_parser)
 
     #############################
 
@@ -81,31 +86,31 @@ def main():
     invocation.execute()
 
 
-def _set_universal(parser: _ActionsContainer):
-    parser.add_argument("-D", "--define", action=DefineAction)
-    parser.add_argument("-v", "--verbose", action="count", default=0)
-
-
 def _define_emitschema(subparsers: _SubParsersAction[ArgumentParser]):
     cmd = subparsers.add_parser("schema")
     cmd.add_argument("which", metavar="task", nargs="1", help="schema to emit")
 
 
-def _define_run(subparsers: _SubParsersAction[ArgumentParser]):
-    cmd = subparsers.add_parser("run")
+def _define_run(
+    subparsers: _SubParsersAction[ArgumentParser],
+    parent: ArgumentParser,
+):
+    cmd = subparsers.add_parser("run", parents=[parent])
     cmd.set_defaults(command="run")
-    _set_universal(cmd)
     cmd.add_argument("tasks", metavar="task", nargs="*", help="one or more task names")
     cmd.add_argument("-d", "--dry-run", action="store_true")
     cmd.add_argument("-c", "--copy", dest="symlink", action="store_false")
     cmd.add_argument("-w", "--workshop", action="store")
 
 
-def _define_list(subparsers: _SubParsersAction[ArgumentParser]):
-    cmd = subparsers.add_parser("list", description="list all tasks")
-    _set_universal(cmd)
+def _define_list(
+    subparsers: _SubParsersAction[ArgumentParser],
+    parent: ArgumentParser,
+):
+    cmd = subparsers.add_parser("list", description="list all tasks", parents=[parent])
     cmd.set_defaults(command="list")
-    cmd.add_argument("-t", "--types", dest="list_types", action="store_true")
+    cmd.add_argument("--types", dest="list_types", action="store_true")
+    cmd.add_argument("--plugins", dest="list_plugins", action="store_true")
 
 
 if __name__ == "__main__":
