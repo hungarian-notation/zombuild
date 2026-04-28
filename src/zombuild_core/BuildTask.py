@@ -28,7 +28,7 @@ from zombuild_core.action_provider import ActionProviderFeature
 from ._modinfo import generate_modinfo
 
 
-def match_actionfeature(name: str):
+def is_action_provider_feature(name: str):
     def predicate(feature: Any) -> TypeIs[ActionProviderFeature]:
         if isinstance(feature, ActionProviderFeature):
             return feature.name == name
@@ -64,7 +64,7 @@ class BuildTask(FilesTask):
 
         for include in config:
             action = include.action
-            provider = self.invocation.get_feature(match_actionfeature(action))
+            provider = self.invocation.get_feature(is_action_provider_feature(action))
             if provider is None:
                 raise ZombuildException(
                     f"no build action provider for action: {action}"
@@ -73,7 +73,7 @@ class BuildTask(FilesTask):
 
     def _package(self):
         self.plan.touch(".zombuilt")
-        self.plan.file("assets/preview.png", "preview.png")
+        self.plan.file(self.config.preview, "preview.png")
         for mod_id in self._invocation.config.mods:
             self._mod(
                 mod_id=mod_id,

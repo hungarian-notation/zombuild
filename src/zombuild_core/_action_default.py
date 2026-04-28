@@ -27,5 +27,5 @@ def default_action(task: BuildTask, config: BuildConfig, prefix: Path):
             src=include.source,
             dst=prefix / include.prefix,
             glob="**/*",
-            ignore=[],
+            ignore=include.ignore,
         )

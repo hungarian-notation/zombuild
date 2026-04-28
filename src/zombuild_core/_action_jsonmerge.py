@@ -89,7 +89,7 @@ def _merge_action(
         collected = task.plan.collect(
             src=include.source,
             glob="**/*",
-            ignore=[],
+            ignore=include.ignore,
             allow_magic=True,
         )
 

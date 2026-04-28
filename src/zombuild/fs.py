@@ -267,15 +267,20 @@ class Plan:
         for matched in glob_root.glob(glob):
             if matched.is_dir():
                 continue
+
+            matched_ignored = False
+
             for ignored in ignore:
                 if matched.match(ignored):
-                    continue
-            collected.append(
-                self.Collected(
-                    abs=matched,
-                    rel=matched.relative_to(glob_root),
+                    matched_ignored = True
+                    break
+            if not matched_ignored:
+                collected.append(
+                    self.Collected(
+                        abs=matched,
+                        rel=matched.relative_to(glob_root),
+                    )
                 )
-            )
 
         return collected
 
@@ -306,11 +311,19 @@ class Plan:
             source: Path | None = None,
         ):
             if perform_operations:
-                work()
+                try:
+                    work()
+                except Exception as e:
+                    e.add_note(f"attempted operation: {message}")
+                    raise e
             if listener:
                 listener(message=message, path=path, source=source)
 
         for item in self.items:
+            if isinstance(item.src, Path) and item.src.exists() and item.dst.exists():
+                if os.path.samefile(item.src, item.dst):
+                    continue
+
             if not item.dst.parent.exists():
                 _auditable(
                     lambda: item.dst.parent.mkdir(parents=True),
@@ -335,9 +348,21 @@ class Plan:
                 )
                 continue
 
-            if item.dst.exists():
+            if item.dst.is_symlink() and not item.dst.exists():
+                dst = item.dst
+                _auditable(
+                    lambda: dst.unlink(),
+                    "delete broken symlink",
+                    path=item.dst,
+                )
+
+            if item.dst.is_symlink() or item.dst.exists():
+                if os.path.samefile(item.src, item.dst):
+                    continue
+
                 sstat = item.src.lstat()
                 dstat = item.dst.lstat()
+
                 if sstat.st_mtime <= dstat.st_mtime:
                     continue
                 else:
